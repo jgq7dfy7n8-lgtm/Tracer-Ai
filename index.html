@@ -165,7 +165,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
 <script>
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef } = React;
 const e = React.createElement;
 
 const TRACER_COLORS = [
@@ -255,6 +255,33 @@ class ErrorBoundary extends React.Component {
 }
 
 function App() {
+  // Refs declared first so positionCanvas (hoisted function) can close over them
+  const videoRef = useRef(null);
+  const overlayRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const animRef = useRef(null);
+  const settingsRef = useRef({ color:'#00e676', lineWidth:3, tracerStyle:'Glowing' });
+  const pointsRef = useRef(null);
+  const metaRef = useRef(null);
+  const metadataPollRef = useRef(null);
+
+  // Hoisted function — safe to reference anywhere in the component
+  function positionCanvas() {
+    const v=videoRef.current, c=overlayRef.current;
+    if (!v || !c || !v.videoWidth) return;
+    const containerW=v.clientWidth, containerH=v.clientHeight;
+    const vidRatio=v.videoWidth/v.videoHeight, conRatio=containerW/containerH;
+    let drawW,drawH,drawX,drawY;
+    if (vidRatio>conRatio) {
+      drawW=containerW; drawH=containerW/vidRatio; drawX=0; drawY=(containerH-drawH)/2;
+    } else {
+      drawH=containerH; drawW=containerH*vidRatio; drawX=(containerW-drawW)/2; drawY=0;
+    }
+    c.style.left=drawX+'px'; c.style.top=drawY+'px';
+    c.style.width=drawW+'px'; c.style.height=drawH+'px';
+    c.width=v.videoWidth; c.height=v.videoHeight;
+  }
+
   const [screen,setScreen] = useState('upload');
   const [videoUrl,setVideoUrl] = useState(null);
   const [videoFile,setVideoFile] = useState(null);
@@ -273,15 +300,6 @@ function App() {
   const [exportProgress,setExportProgress] = useState(null);
   const [analyzing,setAnalyzing] = useState(false);
 
-  const videoRef = useRef(null);
-  const overlayRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const animRef = useRef(null);
-  const settingsRef = useRef(settings);
-  const pointsRef = useRef(null);
-  const metaRef = useRef(null);
-  const metadataPollRef = useRef(null);
-
   useEffect(()=>{ settingsRef.current=settings; },[settings]);
   useEffect(()=>{ pointsRef.current=tracerPoints; },[tracerPoints]);
   useEffect(()=>{ metaRef.current=videoMeta; },[videoMeta]);
@@ -291,7 +309,7 @@ function App() {
     const onResize=()=>{ if(metaRef.current) positionCanvas(); };
     window.addEventListener('resize',onResize);
     return ()=>window.removeEventListener('resize',onResize);
-  },[positionCanvas]);
+  },[]);
 
   const showToast = (msg,type)=>{
     setToast({msg,type:type||'success'});
@@ -369,7 +387,7 @@ function App() {
     }
     animRef.current=requestAnimationFrame(loop);
     return ()=>{ if(animRef.current) cancelAnimationFrame(animRef.current); };
-  },[manualMode, manualPoints.length, positionCanvas]);
+  },[manualMode, manualPoints.length]);
 
   useEffect(()=>{
     if (tracerPoints && overlayRef.current && videoMeta && !manualMode) {
@@ -449,35 +467,6 @@ function App() {
   };
 
   // ── Position canvas to match the actual rendered video frame (letterbox-aware) ──
-  const positionCanvas = useCallback(()=>{
-    const v=videoRef.current, c=overlayRef.current;
-    if (!v || !c || !v.videoWidth) return;
-    const containerW = v.clientWidth;
-    const containerH = v.clientHeight;
-    const vidRatio = v.videoWidth / v.videoHeight;
-    const conRatio = containerW / containerH;
-    let drawW, drawH, drawX, drawY;
-    if (vidRatio > conRatio) {
-      // letterbox top/bottom
-      drawW = containerW;
-      drawH = containerW / vidRatio;
-      drawX = 0;
-      drawY = (containerH - drawH) / 2;
-    } else {
-      // pillarbox left/right
-      drawH = containerH;
-      drawW = containerH * vidRatio;
-      drawX = (containerW - drawW) / 2;
-      drawY = 0;
-    }
-    c.style.left   = drawX + 'px';
-    c.style.top    = drawY + 'px';
-    c.style.width  = drawW + 'px';
-    c.style.height = drawH + 'px';
-    c.width  = v.videoWidth;
-    c.height = v.videoHeight;
-  }, []);
-
   // ── Fit a parabola to noisy AI points and return clean arc ──
   const fitParabola = (pts, meta) => {
     if (!pts || pts.length < 3) return pts;
