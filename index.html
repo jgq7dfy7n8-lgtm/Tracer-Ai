@@ -62,8 +62,12 @@
   .tip-text { font-size:12px; color:var(--muted); line-height:1.5; }
 
   .video-container { margin:20px; border-radius:16px; overflow:hidden; background:#000; position:relative; border:1px solid var(--border); }
-  video, canvas { width:100%; display:block; }
-  .video-overlay-canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+  video { width:100%; display:block; }
+  canvas { display:block; }
+  .video-overlay-canvas {
+    position:absolute; top:0; left:0;
+    /* JS will set exact pixel position to match letterboxed video frame */
+  }
   .video-loading-shade {
     position:absolute; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7);
     display:flex; align-items:center; justify-content:center; gap:8px;
@@ -161,7 +165,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
 <script>
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useCallback } = React;
 const e = React.createElement;
 
 const TRACER_COLORS = [
@@ -282,6 +286,13 @@ function App() {
   useEffect(()=>{ pointsRef.current=tracerPoints; },[tracerPoints]);
   useEffect(()=>{ metaRef.current=videoMeta; },[videoMeta]);
 
+  // Reposition canvas on resize/orientation change
+  useEffect(()=>{
+    const onResize=()=>{ if(metaRef.current) positionCanvas(); };
+    window.addEventListener('resize',onResize);
+    return ()=>window.removeEventListener('resize',onResize);
+  },[positionCanvas]);
+
   const showToast = (msg,type)=>{
     setToast({msg,type:type||'success'});
     setTimeout(()=>setToast(null),3500);
@@ -293,11 +304,13 @@ function App() {
     if (!v) return false;
     if (v.videoWidth>0 && v.videoHeight>0) {
       let dur=v.duration;
-      if (!isFinite(dur) || dur<=0) dur=4; // iOS blobs often report Infinity/NaN until played
+      if (!isFinite(dur) || dur<=0) dur=4;
       const meta = { width:v.videoWidth, height:v.videoHeight, duration:dur };
       setVideoMeta(meta); metaRef.current=meta;
-      if (overlayRef.current){ overlayRef.current.width=v.videoWidth; overlayRef.current.height=v.videoHeight; }
+      try { v.muted=false; } catch(_){}
       setVideoLoading(false);
+      // Position canvas after a brief layout settle
+      setTimeout(positionCanvas, 80);
       return true;
     }
     return false;
@@ -337,19 +350,26 @@ function App() {
 
   // Animation loop (continuous render of tracer while video plays)
   useEffect(()=>{
+    let fc=0;
     function loop(){
       const v=videoRef.current, c=overlayRef.current, pts=pointsRef.current, meta=metaRef.current;
-      if (v && c && pts && meta && pts.length>=2 && !manualMode) {
-        const cf=v.currentTime*30;
+      // Reposition canvas every 60 frames to stay aligned after any layout shift
+      if (fc%60===0 && meta && v && v.videoWidth) positionCanvas();
+      fc++;
+      if (c && meta && pts && pts.length>=2 && !manualMode) {
+        if (!c.width||!c.height||c.width!==meta.width||c.height!==meta.height){ c.width=meta.width; c.height=meta.height; }
+        const cf=(v&&v.currentTime||0)*30;
         const f0=pts[0].frame||0, f1=pts[pts.length-1].frame||0;
-        const prog = f1>f0 ? Math.max(0,Math.min(1,(cf-f0)/(f1-f0+10))) : 1;
-        drawTracer(c, pts, settingsRef.current, meta.width, meta.height, prog);
+        const prog=f1>f0?Math.max(0,Math.min(1,(cf-f0)/(f1-f0+10))):1;
+        drawTracer(c,pts,settingsRef.current,meta.width,meta.height,prog);
+      } else if (c && manualMode && !manualPoints.length) {
+        c.getContext('2d').clearRect(0,0,c.width,c.height);
       }
       animRef.current=requestAnimationFrame(loop);
     }
     animRef.current=requestAnimationFrame(loop);
     return ()=>{ if(animRef.current) cancelAnimationFrame(animRef.current); };
-  },[manualMode]);
+  },[manualMode, manualPoints.length, positionCanvas]);
 
   useEffect(()=>{
     if (tracerPoints && overlayRef.current && videoMeta && !manualMode) {
@@ -428,17 +448,106 @@ function App() {
     try { return JSON.parse(t.replace(/```json|```/g,'').trim()); } catch { return {impactFrameIndex:0}; }
   };
 
+  // ── Position canvas to match the actual rendered video frame (letterbox-aware) ──
+  const positionCanvas = useCallback(()=>{
+    const v=videoRef.current, c=overlayRef.current;
+    if (!v || !c || !v.videoWidth) return;
+    const containerW = v.clientWidth;
+    const containerH = v.clientHeight;
+    const vidRatio = v.videoWidth / v.videoHeight;
+    const conRatio = containerW / containerH;
+    let drawW, drawH, drawX, drawY;
+    if (vidRatio > conRatio) {
+      // letterbox top/bottom
+      drawW = containerW;
+      drawH = containerW / vidRatio;
+      drawX = 0;
+      drawY = (containerH - drawH) / 2;
+    } else {
+      // pillarbox left/right
+      drawH = containerH;
+      drawW = containerH * vidRatio;
+      drawX = (containerW - drawW) / 2;
+      drawY = 0;
+    }
+    c.style.left   = drawX + 'px';
+    c.style.top    = drawY + 'px';
+    c.style.width  = drawW + 'px';
+    c.style.height = drawH + 'px';
+    c.width  = v.videoWidth;
+    c.height = v.videoHeight;
+  }, []);
+
+  // ── Fit a parabola to noisy AI points and return clean arc ──
+  const fitParabola = (pts, meta) => {
+    if (!pts || pts.length < 3) return pts;
+    const W = meta.width, H = meta.height;
+
+    // Find the leftmost & rightmost x to define arc span
+    const xs = pts.map(p=>p.x);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+
+    // Identify impact point: lowest y (highest on screen) among first third, or just first point
+    // In golf, ball starts near golfer (usually lower-left), rises, then falls
+    // Sort by x to get left-to-right order
+    const sorted = [...pts].sort((a,b)=>a.x-b.x);
+
+    const startPt = sorted[0];
+    const endPt   = sorted[sorted.length-1];
+
+    // Find apex: minimum y value (highest point on screen)
+    const apexPt  = pts.reduce((best,p)=> p.y < best.y ? p : best, pts[0]);
+
+    // Clamp everything to reasonable bounds
+    const clamp = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+    const sx = clamp(startPt.x, 0, W);
+    const sy = clamp(startPt.y, 0, H);
+    const ex = clamp(endPt.x, 0, W);
+    const ey = clamp(endPt.y, H*0.3, H);
+    const ay = clamp(apexPt.y, H*0.05, H*0.7);
+    // Apex x should be between start and end
+    const ax = (sx + ex) / 2;
+
+    // Generate 24 smooth parabola points using Bezier control point
+    return Array.from({length:24}, (_,i)=>{
+      const t = i/23;
+      const x = sx + (ex-sx)*t;
+      const y = (1-t)*(1-t)*sy + 2*(1-t)*t*ay + t*t*ey;
+      return { frame: Math.round(t*60), x, y };
+    });
+  };
+
   const trackBall = async (frames, analyzeW, analyzeH)=>{
     const content=[];
-    content.push({type:'text',text:'You are a golf ball tracker. Frames are '+analyzeW+'x'+analyzeH+' px. For each frame, give the ball center x,y in pixels from top-left. If not visible, estimate using a parabolic arc.'});
+    content.push({type:'text',text:[
+      'You are analyzing a golf shot video. The frames are '+analyzeW+'x'+analyzeH+' pixels.',
+      'Your task: find the golf ball in each frame and report its CENTER position as x,y pixel coordinates.',
+      '',
+      'CRITICAL RULES:',
+      '- The golf ball is a small WHITE or LIGHT-COLORED circle, typically 10-30px diameter at this resolution.',
+      '- The ball LAUNCHES from near the golfer (lower portion of frame) and flies in a PARABOLIC ARC.',
+      '- x increases left-to-right. y increases top-to-bottom. The ball goes UP (y DECREASES) then DOWN (y INCREASES).',
+      '- The ball NEVER goes backward (x should only increase, or only decrease, across frames).',
+      '- If you cannot see the ball clearly in a frame, INTERPOLATE smoothly from neighboring frames.',
+      '- DO NOT guess wildly. A smooth parabola is always better than erratic jumps.',
+      '- The arc should start near the golfer and end far away at ground level.',
+    ].join('\n')});
     frames.forEach((f,i)=>{
-      content.push({type:'text',text:'Frame '+i+' (frameNum='+f.frame+'):'});
+      content.push({type:'text',text:'=== FRAME '+i+' (t='+f.time.toFixed(2)+'s) ==='});
       content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:f.data}});
     });
-    content.push({type:'text',text:'Return ONLY JSON:\n{"points":[{"frame":0,"x":320,"y":400}],"stats":{"estimatedCarryYards":180,"apexHeightFt":45,"ballFlightShape":"draw","shotType":"iron"}}\nOne point per frame, smooth flight arc.'});
+    content.push({type:'text',text:[
+      'Now provide the ball position for EVERY frame. Return ONLY valid JSON, no markdown, no explanation:',
+      '{"points":[{"frame":0,"x":150,"y":380},{"frame":2,"x":190,"y":310},...],"stats":{"estimatedCarryYards":180,"apexHeightFt":45,"ballFlightShape":"straight","shotType":"iron"}}',
+      '',
+      'The x values must be MONOTONICALLY INCREASING (or decreasing) — the ball only moves one direction.',
+      'The y values must first DECREASE (ball going up) then INCREASE (ball coming down).',
+      'Provide one point per frame, '+frames.length+' points total.',
+    ].join('\n')});
+
     const r=await fetch('/api/trace',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ max_tokens:1200, messages:[{role:'user',content}] })
+      body:JSON.stringify({ max_tokens:1500, messages:[{role:'user',content}] })
     });
     if (!r.ok) throw new Error('Vision API '+r.status);
     const d=await r.json();
@@ -447,7 +556,11 @@ function App() {
     try { parsed=JSON.parse(t.replace(/```json|```/g,'').trim()); } catch { return null; }
     const meta=metaRef.current;
     const sx=meta.width/analyzeW, sy=meta.height/analyzeH;
-    const pts=(parsed.points||[]).map(p=>({ frame:p.frame||0, x:p.x*sx, y:p.y*sy }));
+    let pts=(parsed.points||[]).map(p=>({ frame:p.frame||0, x:p.x*sx, y:p.y*sy }));
+
+    // Fit a clean parabola to remove AI jitter/errors
+    pts = fitParabola(pts, meta);
+
     return { points:pts, stats:parsed.stats||{} };
   };
 
@@ -502,6 +615,14 @@ function App() {
       pointsRef.current=finalPts; setTracerPoints(finalPts);
       setStats(result.stats);
       v.currentTime=0;
+      // Force an immediate draw so tracer is visible as soon as results screen appears
+      await new Promise(r=>setTimeout(r,100));
+      positionCanvas();
+      const c=overlayRef.current, meta=metaRef.current;
+      if (c && meta && finalPts.length>=2) {
+        if (!c.width || !c.height){ c.width=meta.width; c.height=meta.height; }
+        drawTracer(c, finalPts, settingsRef.current, meta.width, meta.height, 1);
+      }
       setProgress(100); setStatusMsg('Done!');
       setTimeout(()=>{ setAnalyzing(false); setScreen('results'); },600);
     } catch(err) {
@@ -512,14 +633,20 @@ function App() {
   };
 
   const enterManual = ()=>{
-    // ensure overlay canvas has a size even if video metadata hasn't loaded
     const c=overlayRef.current, v=videoRef.current;
+    // Position canvas over actual video frame first
+    positionCanvas();
+    // Clear any previous tracer
+    if (c && c.width && c.height) {
+      c.getContext('2d').clearRect(0,0,c.width,c.height);
+    }
     if (c && (!c.width || !c.height)) {
       const w=(v&&v.videoWidth)||(v&&v.clientWidth)||640;
       const h=(v&&v.videoHeight)||(v&&v.clientHeight)||360;
       c.width=w; c.height=h;
       if (!metaRef.current){ const m={width:w,height:h,duration:4}; metaRef.current=m; setVideoMeta(m); }
     }
+    setManualPoints([]);
     setManualMode(true);
   };
 
@@ -598,7 +725,7 @@ function App() {
   const videoBlock = videoUrl ? e('div',{className:'video-container'},
     e('video',{
       ref:videoRef, src:videoUrl,
-      controls:!manualMode, playsInline:true, muted:true, preload:'auto',
+      controls:true, playsInline:true, muted:true, preload:'auto',
       'webkit-playsinline':'true',
       onLoadedMetadata:setMetaFromVideo,
       onLoadedData:setMetaFromVideo,
