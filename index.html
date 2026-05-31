@@ -127,7 +127,94 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
 .spill.done { background:#192e19; color:#4caf50; }
 
 /* Analyzing overlay */
-/* Frame scrubber */
+/* ── FULLSCREEN MARK MODE ── */
+.fs-mark-screen {
+  position:fixed; inset:0; z-index:200; background:#000; display:flex; flex-direction:column;
+}
+.fs-video-wrap {
+  position:relative; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center;
+}
+.fs-video-wrap video { width:100%; height:100%; object-fit:contain; display:block; }
+.fs-canvas {
+  position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;
+}
+.fs-tap-layer {
+  position:absolute; inset:0; z-index:5; cursor:crosshair;
+}
+/* Floating top bar */
+.fs-topbar {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 12px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+  display:flex; align-items:flex-start; gap:12px;
+}
+.fs-step-badge {
+  background:var(--gdim); border:1px solid rgba(0,230,118,0.35);
+  border-radius:20px; padding:5px 12px;
+  font-family:'Bebas Neue'; font-size:13px; letter-spacing:2px; color:var(--green);
+  white-space:nowrap;
+}
+.fs-instruct-text { flex:1; }
+.fs-instruct-title { font-size:15px; font-weight:700; line-height:1.2; }
+.fs-instruct-sub { font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px; }
+/* Step dots */
+.fs-stepdots {
+  position:absolute; top:calc(env(safe-area-inset-top,0px) + 60px); left:0; right:0;
+  display:flex; justify-content:center; gap:10px; z-index:10;
+}
+.fs-dot {
+  width:9px; height:9px; border-radius:50%;
+  border:2px solid rgba(255,255,255,0.3);
+}
+.fs-dot.done  { background:#4caf50; border-color:#4caf50; }
+.fs-dot.active{ background:var(--green); border-color:var(--green); box-shadow:0 0 8px var(--green); }
+/* Floating bottom panel */
+.fs-bottom {
+  position:absolute; bottom:0; left:0; right:0; z-index:10;
+  background:linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent 100%);
+  padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));
+}
+.fs-scrubber-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.fs-frame-btn {
+  width:40px; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.08); color:#fff; font-size:20px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.fs-frame-btn:active { background:var(--green); color:#000; }
+.fs-scrub {
+  flex:1; -webkit-appearance:none; height:5px; border-radius:3px;
+  background:rgba(255,255,255,0.2); outline:none;
+}
+.fs-scrub::-webkit-slider-thumb {
+  -webkit-appearance:none; width:24px; height:24px; border-radius:50%;
+  background:var(--green); cursor:pointer; box-shadow:0 0 10px rgba(0,230,118,0.6);
+}
+.fs-info-row { display:flex; align-items:center; justify-content:space-between; }
+.fs-frame-count { font-family:'Bebas Neue'; font-size:16px; color:var(--green); letter-spacing:1px; }
+.fs-time-str { font-size:11px; color:rgba(255,255,255,0.5); }
+.fs-fps-row { display:flex; gap:5px; margin-top:8px; }
+.fs-fps-btn {
+  font-size:10px; font-weight:700; letter-spacing:1px; padding:4px 9px;
+  border-radius:16px; border:1px solid rgba(255,255,255,0.15);
+  background:transparent; color:rgba(255,255,255,0.5); cursor:pointer;
+}
+.fs-fps-btn.on { background:rgba(0,230,118,0.15); color:var(--green); border-color:rgba(0,230,118,0.4); }
+.fs-action-row { display:flex; gap:8px; margin-top:10px; }
+.fs-action-btn {
+  flex:1; padding:11px; border-radius:10px; border:none; cursor:pointer;
+  font-family:'Bebas Neue'; font-size:15px; letter-spacing:2px; text-align:center;
+}
+.fs-action-btn:active { opacity:0.8; }
+.fs-btn-redo { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; }
+.fs-btn-ai   { background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); color:var(--green); }
+.fs-btn-back { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); }
+/* Marker rings */
+.fs-marker {
+  position:absolute; transform:translate(-50%,-50%); pointer-events:none; z-index:8;
+  animation:markerPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes markerPop { from{opacity:0;transform:translate(-50%,-50%) scale(0.2)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
 .frame-scrubber {
   margin:10px 20px 0; background:var(--surface); border:1px solid var(--border);
   border-radius:14px; padding:14px 16px;
@@ -388,9 +475,9 @@ function App() {
   const tapRef     = useRef(null);
   const fileRef    = useRef(null);
   const animRef    = useRef(null);
-  const arcRef     = useRef(null);   // computed arc points (canvas-native)
-  const impactTimeRef = useRef(0);   // video time at impact tap
-  const flightDurRef  = useRef(3);   // seconds for full arc to draw
+  const arcRef     = useRef(null);      // computed arc points (canvas-native)
+  const impactTimeRef  = useRef(0);     // video.currentTime when impact was tapped
+  const landingTimeRef = useRef(null);  // video.currentTime when landing was tapped (null = use flightDur)
 
   // ── state ──
   const [screen, setScreen]       = useState('upload'); // upload | mark | preview | results
@@ -476,19 +563,27 @@ function App() {
     return () => clearInterval(id);
   }, [videoUrl]);
 
-  // ── Animation loop: draw tracer synced to video ──
+  // ── Animation loop: draw tracer synced to real video timestamps ──
   useEffect(() => {
     function loop() {
       const v = videoRef.current, c = overlayRef.current, arc = arcRef.current;
       const s = settingsRef.current;
       if (v && c && arc && arc.length >= 2) {
         const ctx = c.getContext('2d');
-        const elapsed = Math.max(0, v.currentTime - impactTimeRef.current);
-        const prog = Math.min(1, elapsed / flightDurRef.current);
+        const t0 = impactTimeRef.current;
+        const t1 = landingTimeRef.current;
+        let prog;
+        if (t1 !== null && t1 > t0) {
+          // Real timing: progress = how far between impact and landing timestamps
+          prog = (v.currentTime - t0) / (t1 - t0);
+        } else {
+          // Fallback: fixed duration
+          prog = (v.currentTime - t0) / (s.flightSec || 3);
+        }
+        prog = Math.max(0, Math.min(1, prog));
         drawBroadcastTracer(ctx, arc, prog, s.color, s.lineWidth, s.style);
       } else if (c && !arcRef.current) {
-        const ctx = c.getContext('2d');
-        ctx.clearRect(0, 0, c.width, c.height);
+        c.getContext('2d').clearRect(0, 0, c.width, c.height);
       }
       animRef.current = requestAnimationFrame(loop);
     }
@@ -505,36 +600,50 @@ function App() {
   }, [settings]);
 
   // ── Handle tap on video to place markers ──
+  // Each tap records the current video timestamp — this is how tracer syncs to real ball flight
+  const tapTimesRef = useRef([]); // [impactTime, apexTime, landingTime]
+
   const handleTap = (clientX, clientY) => {
     const v = videoRef.current;
     if (!v || !vidReady || markStep >= 3) return;
-    const pt = tapToCanvas(clientX, clientY, v, overlayRef.current);
 
-    // Screen display position (relative to video element)
+    const pt = tapToCanvas(clientX, clientY, v, overlayRef.current);
     const rect = v.getBoundingClientRect();
     const sx = clientX - rect.left, sy = clientY - rect.top;
+    const tapTime = v.currentTime; // record EXACTLY when in the video this tap happened
 
     const labels = ['IMPACT','APEX','LANDING'];
-    const next = [...markers, { ...pt, sx, sy, label: labels[markStep] }];
+    const next = [...markers, { ...pt, sx, sy, label: labels[markStep], time: tapTime }];
     setMarkers(next);
     const nextStep = markStep + 1;
     setMarkStep(nextStep);
 
+    // Store tap times
+    const times = [...tapTimesRef.current, tapTime];
+    tapTimesRef.current = times;
+
     if (nextStep === 3) {
-      // All 3 points placed — build arc
       const [imp, apx, land] = next;
+
+      // Build the arc from the 3 canvas-space positions
       const arc = makeArc(imp, apx, land, 80);
       arcRef.current = arc;
       setArcPoints(arc);
-      impactTimeRef.current = v.currentTime;
-      flightDurRef.current = settings.flightSec;
-      // Draw full arc immediately
+
+      // Store real timing — tracer draws from impact timestamp to landing timestamp
+      impactTimeRef.current  = imp.time;
+      landingTimeRef.current = land.time;
+
+      // Draw full arc preview immediately
       const c = overlayRef.current;
       if (c) {
         c.width = v.videoWidth; c.height = v.videoHeight;
         drawBroadcastTracer(c.getContext('2d'), arc, 1, settings.color, settings.lineWidth, settings.style);
       }
-      setTimeout(() => setScreen('results'), 300);
+
+      // Rewind to just before impact so user can watch it play back
+      v.currentTime = Math.max(0, imp.time - 0.5);
+      setTimeout(() => setScreen('results'), 200);
     }
   };
 
@@ -628,7 +737,9 @@ function App() {
   // ── Reset markers ──
   const resetMarkers = () => {
     setMarkStep(0); setMarkers([]);
+    tapTimesRef.current = [];
     arcRef.current = null; setArcPoints(null);
+    landingTimeRef.current = null;
     const c = overlayRef.current;
     if (c) c.getContext('2d').clearRect(0,0,c.width,c.height);
   };
@@ -670,8 +781,11 @@ function App() {
         const el = (Date.now()-t0)/1000;
         setExportPct(Math.min(99, Math.round(el/dur*100)));
         ctx.drawImage(v, 0, 0, W, H);
-        const elapsed = Math.max(0, el - impactTimeRef.current);
-        const prog = Math.min(1, elapsed / flightDurRef.current);
+        const t0 = impactTimeRef.current;
+        const t1 = landingTimeRef.current;
+        const flightDur = (t1 !== null && t1 > t0) ? (t1 - t0) : (s.flightSec || 3);
+        const elapsed = Math.max(0, el - t0);
+        const prog = Math.min(1, elapsed / flightDur);
         if (prog > 0) {
           const tctx = tmp.getContext('2d');
           tctx.clearRect(0,0,W,H);
@@ -796,67 +910,117 @@ function App() {
     ),
 
     // ── MARK SCREEN ──
-    screen === 'mark' && h('div', { className:'screen' },
-      h('div', { style:{padding:'14px 20px 8px'} },
-        h('div', { style:{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)',marginBottom:3} }, 'MARK YOUR SHOT'),
-        h('div', { style:{fontSize:12,color:'var(--muted)',lineHeight:1.5} },
-          markStep < 3
-            ? 'Use the frame slider to find the exact moment, then tap the ball.'
-            : 'Building tracer arc...'
-        )
-      ),
-      // Step progress pills
-      h('div', { className:'steps' },
-        ['IMPACT','APEX','LANDING'].map((l,i) =>
-          h('div', { key:l, className:'spill' + (markStep===i?' active':markStep>i?' done':'') },
-            markStep>i ? '✓ '+l : l
-          )
-        )
-      ),
-      videoBlock,
+    // ── MARK SCREEN (fullscreen) ──
+    screen === 'mark' && h('div', { className:'fs-mark-screen' },
 
-      // ── FRAME SCRUBBER ──
-      markStep < 3 && h('div', { className:'frame-scrubber' },
-        h('div', { className:'fs-top' },
-          h('div', { className:'fs-label' }, '🎞 FRAME SCRUBBER'),
-          h('div', { className:'fs-counter' },
-            'F', currentFrame, h('span', null, ' / '+totalFrames)
-          )
-        ),
-        h('div', { className:'fs-slider-row' },
-          // Step back 1 frame
-          h('div', { className:'frame-btn', onClick:()=>stepFrame(-1), onTouchEnd:e=>{e.preventDefault();stepFrame(-1);} }, '‹'),
-          // Fine scrub slider — full range of video
-          h('input', {
-            className:'fs-slider', type:'range',
-            min:0, max:totalFrames||100, step:1,
-            value:currentFrame,
-            onChange: e => seekToFrame(parseInt(e.target.value)),
-            onInput:  e => seekToFrame(parseInt(e.target.value)),
-          }),
-          // Step forward 1 frame
-          h('div', { className:'frame-btn', onClick:()=>stepFrame(1), onTouchEnd:e=>{e.preventDefault();stepFrame(1);} }, '›'),
-        ),
-        h('div', { className:'fs-time' },
-          (currentFrame/fps).toFixed(3) + 's  ·  tap the ball in the video above once on the right frame'
-        ),
-        // FPS selector — important for slow-mo videos
-        h('div', { className:'fs-fps' },
-          [24,30,60,120,240].map(f =>
-            h('div', { key:f, className:'fps-btn'+(fps===f?' on':''), onClick:()=>{ setFps(f); setTotalFrames(Math.round((videoRef.current?.duration||0)*f)); } },
-              f+'fps'
+      h('div', { className:'fs-video-wrap' },
+        // Tap capture layer
+        markStep < 3 && h('div', {
+          className:'fs-tap-layer',
+          onClick: e => handleTap(e.clientX, e.clientY),
+          onTouchEnd: e => { e.preventDefault(); const t=e.changedTouches[0]; if(t) handleTap(t.clientX,t.clientY); }
+        }),
+
+        // Top instruction bar
+        h('div', { className:'fs-topbar' },
+          h('div', { className:'fs-step-badge' }, markStep < 3 ? `STEP ${markStep+1} OF 3` : 'BUILDING...'),
+          markStep < 3 && h('div', { className:'fs-instruct-text' },
+            h('div', { className:'fs-instruct-title' },
+              ['TAP THE BALL AT IMPACT','TAP THE BALL AT ITS HIGHEST POINT','TAP WHERE THE BALL LANDS'][markStep]
+            ),
+            h('div', { className:'fs-instruct-sub' },
+              ['Scrub to exact impact frame first','Scrub to apex of the arc','Scrub to landing spot'][markStep]
             )
           )
-        )
-      ),
-
-      h('div', { style:{height:10} }),
-      h('div', { className:'controls' },
-        markStep > 0 && h('button', { className:'btn btn-dark', onClick:resetMarkers }, '↩ REDO MARKERS'),
-        h('button', { className:'btn btn-dark', onClick:autoDetect, disabled:!vidReady||analyzing },
-          analyzing ? '⏳ DETECTING...' : '✨ AUTO-DETECT (AI)'
         ),
-        h('button', { className:'btn btn-dark', onClick:() => { setScreen('upload'); setVideoUrl(null); setVideoFile(null); resetMarkers(); } }, '← NEW VIDEO')
+
+        // Step dots
+        h('div', { className:'fs-stepdots' },
+          [0,1,2].map(i => h('div', { key:i,
+            className:'fs-dot'+(markStep>i?' done':markStep===i?' active':'')
+          }))
+        ),
+
+        // Placed marker rings (absolute, positioned from video top-left)
+        ...markers.map((m, i) =>
+          h('div', { key:i, className:'fs-marker', style:{ left:m.sx, top:m.sy } },
+            h('svg', { width:32, height:32, viewBox:'0 0 32 32' },
+              h('circle', { cx:16, cy:16, r:12, fill:'none',
+                stroke:['#ff4444','#ffd700','#00e676'][i], strokeWidth:2.5,
+                strokeDasharray:'3 2'
+              }),
+              h('circle', { cx:16, cy:16, r:4, fill:['#ff4444','#ffd700','#00e676'][i] }),
+            ),
+            h('div', {
+              style:{
+                position:'absolute', left:18, top:-6, fontSize:10, fontWeight:700,
+                letterSpacing:1, color:['#ff4444','#ffd700','#00e676'][i],
+                background:'rgba(0,0,0,0.7)', padding:'2px 5px', borderRadius:4,
+                whiteSpace:'nowrap'
+              }
+            }, ['IMPACT','APEX','LAND'][i])
+          )
+        ),
+
+        // Video
+        h('video', {
+          ref: videoRef, src: videoUrl, controls: true, playsInline: true,
+          muted: true, preload:'auto', 'webkit-playsinline':'true',
+          style:{ width:'100%', height:'100%', objectFit:'contain', display:'block' },
+          onLoadedMetadata: onVidReady, onLoadedData: onVidReady, onCanPlay: onVidReady,
+        }),
+
+        // Tracer canvas overlay
+        h('canvas', {
+          ref: overlayRef,
+          className:'fs-canvas'
+        }),
+
+        // Bottom HUD
+        h('div', { className:'fs-bottom' },
+          // Scrubber row
+          h('div', { className:'fs-scrubber-row' },
+            h('div', { className:'fs-frame-btn',
+              onClick:()=>stepFrame(-1),
+              onTouchEnd:e=>{e.preventDefault();stepFrame(-1);}
+            }, '‹'),
+            h('input', {
+              className:'fs-scrub', type:'range',
+              min:0, max:totalFrames||100, step:1,
+              value:currentFrame,
+              onChange:e=>seekToFrame(parseInt(e.target.value)),
+              onInput:e=>seekToFrame(parseInt(e.target.value)),
+            }),
+            h('div', { className:'fs-frame-btn',
+              onClick:()=>stepFrame(1),
+              onTouchEnd:e=>{e.preventDefault();stepFrame(1);}
+            }, '›'),
+          ),
+          h('div', { className:'fs-info-row' },
+            h('div', { className:'fs-frame-count' }, 'F'+currentFrame+' / '+totalFrames),
+            h('div', { className:'fs-time-str' }, (currentFrame/fps).toFixed(3)+'s')
+          ),
+          h('div', { className:'fs-fps-row' },
+            [24,30,60,120,240].map(f =>
+              h('div', { key:f, className:'fs-fps-btn'+(fps===f?' on':''),
+                onClick:()=>{ setFps(f); setTotalFrames(Math.round((videoRef.current?.duration||0)*f)); }
+              }, f+'fps')
+            )
+          ),
+          h('div', { className:'fs-action-row' },
+            markStep > 0 && h('div', { className:'fs-action-btn fs-btn-redo', onClick:resetMarkers,
+              onTouchEnd:e=>{e.preventDefault();resetMarkers();} }, '↩ REDO'),
+            h('div', { className:'fs-action-btn fs-btn-ai',
+              onClick:autoDetect,
+              onTouchEnd:e=>{e.preventDefault();autoDetect();},
+              style:{opacity:(!vidReady||analyzing)?0.4:1, pointerEvents:(!vidReady||analyzing)?'none':'auto'}
+            }, analyzing?'DETECTING...':'✨ AI AUTO'),
+            h('div', { className:'fs-action-btn fs-btn-back',
+              onClick:()=>{setScreen('upload');setVideoUrl(null);setVideoFile(null);resetMarkers();},
+              onTouchEnd:e=>{e.preventDefault();setScreen('upload');setVideoUrl(null);setVideoFile(null);resetMarkers();}
+            }, '✕ EXIT')
+          )
+        )
       )
     ),
 
