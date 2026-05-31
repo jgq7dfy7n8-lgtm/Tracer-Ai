@@ -127,7 +127,31 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
 .spill.done { background:#192e19; color:#4caf50; }
 
 /* Analyzing overlay */
-.analyze-screen {
+/* Frame scrubber */
+.frame-scrubber {
+  margin:10px 20px 0; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px;
+}
+.fs-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.fs-label { font-family:'Bebas Neue'; font-size:14px; letter-spacing:2px; color:var(--green); }
+.fs-counter { font-family:'Bebas Neue'; font-size:18px; letter-spacing:1px; color:var(--text); }
+.fs-counter span { font-size:11px; color:var(--muted); margin-left:2px; }
+.fs-slider-row { display:flex; align-items:center; gap:10px; }
+.fs-slider { flex:1; -webkit-appearance:none; appearance:none; height:5px; border-radius:3px; background:var(--border); outline:none; cursor:pointer; }
+.fs-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--green); cursor:pointer; box-shadow:0 0 8px rgba(0,230,118,0.5); }
+.frame-btn {
+  width:42px; height:42px; border-radius:10px; border:1px solid var(--border);
+  background:var(--s2); color:var(--text); font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.frame-btn:active { background:var(--green); color:#000; transform:scale(0.93); }
+.fs-fps { display:flex; gap:6px; margin-top:10px; }
+.fps-btn {
+  font-size:11px; font-weight:600; letter-spacing:1px; padding:5px 10px;
+  border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer;
+}
+.fps-btn.on { background:var(--gdim); color:var(--green); border-color:rgba(0,230,118,0.35); }
+.fs-time { font-size:11px; color:var(--muted); text-align:center; margin-top:6px; }
   position:fixed; inset:0; background:rgba(10,10,10,0.97); z-index:300;
   display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px;
 }
@@ -384,8 +408,35 @@ function App() {
   const [analyzePct, setAnalyzePct] = useState(0);
   const [exportPct, setExportPct]   = useState(null);
 
-  const settingsRef = useRef(settings);
-  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  const [fps, setFps]           = useState(30);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [totalFrames, setTotalFrames]   = useState(0);
+
+  // Update frame counter as video plays/scrubs
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onTime = () => setCurrentFrame(Math.round(v.currentTime * fps));
+    v.addEventListener('timeupdate', onTime);
+    return () => v.removeEventListener('timeupdate', onTime);
+  }, [fps, vidReady]);
+
+  // Set total frames when video ready
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v && v.duration && isFinite(v.duration)) {
+      setTotalFrames(Math.round(v.duration * fps));
+    }
+  }, [vidReady, fps]);
+
+  const seekToFrame = (frame) => {
+    const v = videoRef.current; if (!v) return;
+    const clamped = Math.max(0, Math.min(totalFrames, frame));
+    v.currentTime = clamped / fps;
+    setCurrentFrame(clamped);
+  };
+
+  const stepFrame = (delta) => seekToFrame(currentFrame + delta);
 
   const showToast = (msg, type) => {
     setToast({ msg, type: type || 'ok' });
@@ -746,11 +797,11 @@ function App() {
 
     // ── MARK SCREEN ──
     screen === 'mark' && h('div', { className:'screen' },
-      h('div', { style:{padding:'14px 20px 10px'} },
-        h('div', { style:{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)',marginBottom:4} }, 'MARK YOUR SHOT'),
+      h('div', { style:{padding:'14px 20px 8px'} },
+        h('div', { style:{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)',marginBottom:3} }, 'MARK YOUR SHOT'),
         h('div', { style:{fontSize:12,color:'var(--muted)',lineHeight:1.5} },
           markStep < 3
-            ? 'Scrub the video to the right moment, then tap the ball.'
+            ? 'Use the frame slider to find the exact moment, then tap the ball.'
             : 'Building tracer arc...'
         )
       ),
@@ -763,7 +814,43 @@ function App() {
         )
       ),
       videoBlock,
-      h('div', { style:{height:12} }),
+
+      // ── FRAME SCRUBBER ──
+      markStep < 3 && h('div', { className:'frame-scrubber' },
+        h('div', { className:'fs-top' },
+          h('div', { className:'fs-label' }, '🎞 FRAME SCRUBBER'),
+          h('div', { className:'fs-counter' },
+            'F', currentFrame, h('span', null, ' / '+totalFrames)
+          )
+        ),
+        h('div', { className:'fs-slider-row' },
+          // Step back 1 frame
+          h('div', { className:'frame-btn', onClick:()=>stepFrame(-1), onTouchEnd:e=>{e.preventDefault();stepFrame(-1);} }, '‹'),
+          // Fine scrub slider — full range of video
+          h('input', {
+            className:'fs-slider', type:'range',
+            min:0, max:totalFrames||100, step:1,
+            value:currentFrame,
+            onChange: e => seekToFrame(parseInt(e.target.value)),
+            onInput:  e => seekToFrame(parseInt(e.target.value)),
+          }),
+          // Step forward 1 frame
+          h('div', { className:'frame-btn', onClick:()=>stepFrame(1), onTouchEnd:e=>{e.preventDefault();stepFrame(1);} }, '›'),
+        ),
+        h('div', { className:'fs-time' },
+          (currentFrame/fps).toFixed(3) + 's  ·  tap the ball in the video above once on the right frame'
+        ),
+        // FPS selector — important for slow-mo videos
+        h('div', { className:'fs-fps' },
+          [24,30,60,120,240].map(f =>
+            h('div', { key:f, className:'fps-btn'+(fps===f?' on':''), onClick:()=>{ setFps(f); setTotalFrames(Math.round((videoRef.current?.duration||0)*f)); } },
+              f+'fps'
+            )
+          )
+        )
+      ),
+
+      h('div', { style:{height:10} }),
       h('div', { className:'controls' },
         markStep > 0 && h('button', { className:'btn btn-dark', onClick:resetMarkers }, '↩ REDO MARKERS'),
         h('button', { className:'btn btn-dark', onClick:autoDetect, disabled:!vidReady||analyzing },
