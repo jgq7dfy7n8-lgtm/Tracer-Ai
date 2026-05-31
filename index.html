@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>TRACER — Golf Shot Tracer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0a; --surface:#111; --surface2:#1a1a1a; --border:#222;
+    --green:#00e676; --green-dim:rgba(0,230,118,0.12);
+    --red:#ff4444; --blue:#4488ff; --yellow:#ffd700;
+    --text:#fff; --muted:#666;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow-x:hidden; }
+  #root { min-height:100vh; }
+
+  .header {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:calc(16px + env(safe-area-inset-top,0)) 20px 16px;
+    background:rgba(10,10,10,0.92); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo { font-family:'Bebas Neue'; font-size:26px; letter-spacing:4px; color:var(--green); }
+  .logo span { color:var(--muted); }
+  .header-badge {
+    font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+    background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.3);
+    padding:4px 10px; border-radius:20px;
+  }
+  .screen { padding-top:74px; min-height:100vh; padding-bottom:40px; }
+
+  .upload-zone {
+    margin:20px; border:2px dashed var(--border); border-radius:16px;
+    padding:50px 20px; text-align:center; transition:all 0.2s;
+    background:var(--surface); position:relative; overflow:hidden;
+  }
+  .upload-zone.drag-over { border-color:var(--green); background:var(--green-dim); }
+  .upload-icon {
+    width:64px; height:64px; margin:0 auto 16px; background:var(--green-dim);
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(0,230,118,0.3);
+  }
+  .upload-icon svg { width:28px; height:28px; stroke:var(--green); }
+  .upload-title { font-family:'Bebas Neue'; font-size:24px; letter-spacing:3px; margin-bottom:8px; }
+  .upload-sub { color:var(--muted); font-size:13px; line-height:1.6; }
+  .upload-btn {
+    margin-top:20px; padding:14px 32px; background:var(--green); color:#000;
+    font-family:'Bebas Neue'; font-size:18px; letter-spacing:3px;
+    border:none; border-radius:10px; cursor:pointer; transition:transform 0.1s;
+  }
+  .upload-btn:active { transform:scale(0.96); }
+
+  .tips { margin:0 20px 20px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tip-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .tip-icon { font-size:20px; margin-bottom:6px; }
+  .tip-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--green); margin-bottom:4px; }
+  .tip-text { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  .video-container { margin:20px; border-radius:16px; overflow:hidden; background:#000; position:relative; border:1px solid var(--border); }
+  video, canvas { width:100%; display:block; }
+  .video-overlay-canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+  .video-loading-shade {
+    position:absolute; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    color:var(--green); font-family:'Bebas Neue'; letter-spacing:3px; font-size:13px;
+    padding:8px; pointer-events:none;
+  }
+
+  .controls { margin:0 20px; display:flex; flex-direction:column; gap:12px; }
+  .btn {
+    width:100%; padding:16px; border:none; border-radius:12px;
+    font-family:'Bebas Neue'; font-size:20px; letter-spacing:3px;
+    cursor:pointer; transition:transform 0.1s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .btn:active { transform:scale(0.97); }
+  .btn-primary { background:var(--green); color:#000; }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-danger { background:rgba(255,68,68,0.1); color:var(--red); border:1px solid rgba(255,68,68,0.3); }
+  .btn:disabled { opacity:0.4; pointer-events:none; }
+
+  .analyzing-overlay {
+    position:fixed; inset:0; background:rgba(10,10,10,0.96);
+    z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px 20px;
+  }
+  .analyzing-title { font-family:'Bebas Neue'; font-size:32px; letter-spacing:4px; margin-bottom:12px; }
+  .analyzing-sub { color:var(--muted); font-size:13px; text-align:center; margin-bottom:30px; }
+  .progress-ring { width:140px; height:140px; margin-bottom:24px; position:relative; }
+  .progress-ring svg { transform:rotate(-90deg); }
+  .progress-ring-bg { stroke:var(--border); }
+  .progress-ring-fg { stroke:var(--green); transition:stroke-dashoffset 0.4s ease; }
+  .progress-pct {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue'; font-size:38px; color:var(--green); letter-spacing:2px;
+  }
+  .status-msg { font-size:14px; color:var(--text); margin-bottom:16px; text-align:center; min-height:20px; }
+  .step-list { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .step-pill { font-size:11px; padding:5px 11px; border-radius:20px; background:var(--border); color:var(--muted); }
+  .step-pill.active { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.3); }
+  .step-pill.done { background:#1a2e1a; color:#4caf50; }
+
+  .settings-panel { margin:0 20px 20px; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .settings-header { padding:14px 16px; border-bottom:1px solid var(--border); font-family:'Bebas Neue'; font-size:16px; letter-spacing:2px; color:var(--green); }
+  .settings-row { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .settings-row:last-child { border-bottom:none; }
+  .setting-label { font-size:13px; font-weight:500; }
+  .setting-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .color-swatches { display:flex; gap:8px; }
+  .swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform 0.1s; }
+  .swatch.selected { border-color:#fff; transform:scale(1.15); }
+  .slider { -webkit-appearance:none; appearance:none; width:120px; height:4px; border-radius:2px; background:var(--border); outline:none; }
+  .slider::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--green); cursor:pointer; }
+  select { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; outline:none; }
+
+  .results-section { margin:0 20px 20px; }
+  .section-title { font-family:'Bebas Neue'; font-size:20px; letter-spacing:3px; margin-bottom:12px; color:var(--green); }
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .stat-value { font-family:'Bebas Neue'; font-size:28px; color:var(--green); }
+  .stat-unit { font-size:11px; color:var(--muted); }
+  .stat-label { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .export-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .export-row { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; }
+  .export-row:last-child { border-bottom:none; }
+  .export-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .export-info { flex:1; }
+  .export-name { font-size:14px; font-weight:600; }
+  .export-desc { font-size:12px; color:var(--muted); margin-top:2px; }
+  .export-btn { padding:8px 16px; border-radius:8px; font-family:'Bebas Neue'; font-size:14px; letter-spacing:2px; cursor:pointer; border:none; transition:transform 0.1s; }
+  .export-btn:active { transform:scale(0.95); }
+  .export-btn-green { background:var(--green); color:#000; }
+  .export-btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+
+  .toast {
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:12px 20px; font-size:13px; display:flex; align-items:center; gap:8px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:999; max-width:90vw;
+    animation:slideUp 0.3s ease;
+  }
+  .toast.success { border-color:rgba(0,230,118,0.4); color:var(--green); }
+  .toast.error { border-color:rgba(255,68,68,0.4); color:var(--red); }
+  @keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+  .errbox { margin:80px 20px 20px; background:var(--surface); border:1px solid rgba(255,68,68,0.4); border-radius:14px; padding:20px; }
+  .errbox h2 { font-family:'Bebas Neue'; letter-spacing:2px; color:var(--red); font-size:22px; margin-bottom:10px; }
+  .errbox pre { font-size:12px; color:var(--muted); white-space:pre-wrap; word-break:break-word; background:#000; padding:12px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<script>
+const { useState, useEffect, useRef } = React;
+const e = React.createElement;
+
+const TRACER_COLORS = [
+  { hex:'#00e676' },{ hex:'#ffffff' },{ hex:'#ffd700' },
+  { hex:'#ff4444' },{ hex:'#4488ff' },{ hex:'#ff8c00' }
+];
+const TRACER_STYLES = ['Glowing','Smooth Arc','Dotted','TV Classic'];
+
+function formatTime(sec) {
+  if (!isFinite(sec)) return '0:00';
+  const m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return m + ':' + String(s).padStart(2,'0');
+}
+
+function drawTracer(canvas, points, settings, videoW, videoH, animProgress) {
+  if (!canvas || !points || points.length<2) return;
+  if (animProgress===undefined) animProgress=1;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const sx=canvas.width/videoW, sy=canvas.height/videoH;
+  const scaled=points.map(p=>({x:p.x*sx,y:p.y*sy}));
+  const n=Math.max(2,Math.round(scaled.length*animProgress));
+  const visible=scaled.slice(0,n);
+  const color=settings.color, lw=settings.lineWidth, style=settings.tracerStyle;
+
+  if (style==='Glowing') {
+    [0.15,0.3,0.6,1].forEach((a,i)=>{
+      ctx.save();
+      ctx.globalAlpha=a; ctx.strokeStyle=color;
+      ctx.lineWidth=lw*(4-i)*0.8; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.shadowColor=color; ctx.shadowBlur=20-i*4;
+      ctx.beginPath();
+      visible.forEach((p,j)=>j===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.stroke(); ctx.restore();
+    });
+  } else if (style==='Dotted') {
+    visible.forEach((p,j)=>{
+      if (j===0) return;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y, j===visible.length-1?lw*2.5:lw*1.2, 0, Math.PI*2);
+      ctx.fillStyle=color; ctx.globalAlpha=0.3+(j/visible.length)*0.7; ctx.fill();
+    });
+    ctx.globalAlpha=1;
+  } else {
+    ctx.save();
+    ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
+    if (style==='TV Classic') ctx.setLineDash([lw*2,lw*1.5]);
+    const a=visible[0], b=visible[visible.length-1];
+    const g=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+    g.addColorStop(0,color+'44'); g.addColorStop(0.5,color+'cc'); g.addColorStop(1,color);
+    ctx.strokeStyle=g; ctx.beginPath();
+    if (visible.length>=3) {
+      ctx.moveTo(visible[0].x,visible[0].y);
+      for (let i=1;i<visible.length-1;i++){
+        const mx=(visible[i].x+visible[i+1].x)/2, my=(visible[i].y+visible[i+1].y)/2;
+        ctx.quadraticCurveTo(visible[i].x,visible[i].y,mx,my);
+      }
+      ctx.lineTo(b.x,b.y);
+    } else { ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); }
+    ctx.stroke(); ctx.restore();
+  }
+  if (visible.length>0 && animProgress>0.05) {
+    const s=visible[0];
+    ctx.beginPath(); ctx.arc(s.x,s.y,lw*2.5,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.globalAlpha=0.9; ctx.fill(); ctx.globalAlpha=1;
+  }
+  if (visible.length>1) {
+    const last=visible[visible.length-1];
+    ctx.beginPath(); ctx.arc(last.x,last.y,lw*3,0,Math.PI*2);
+    ctx.fillStyle='#fff'; ctx.globalAlpha=0.9; ctx.fill(); ctx.globalAlpha=1;
+  }
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(p){ super(p); this.state={err:null}; }
+  static getDerivedStateFromError(err){ return {err}; }
+  render(){
+    if (this.state.err) {
+      return e('div',{className:'errbox'},
+        e('h2',null,'Something broke'),
+        e('pre',null,String(this.state.err.message||this.state.err)),
+        e('button',{className:'btn btn-primary',style:{marginTop:16},onClick:()=>location.reload()},'RELOAD')
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function App() {
+  const [screen,setScreen] = useState('upload');
+  const [videoUrl,setVideoUrl] = useState(null);
+  const [videoFile,setVideoFile] = useState(null);
+  const [isDragging,setIsDragging] = useState(false);
+  const [progress,setProgress] = useState(0);
+  const [statusMsg,setStatusMsg] = useState('');
+  const [steps,setSteps] = useState([]);
+  const [tracerPoints,setTracerPoints] = useState(null);
+  const [videoMeta,setVideoMeta] = useState(null);
+  const [videoLoading,setVideoLoading] = useState(false);
+  const [settings,setSettings] = useState({ color:'#00e676', lineWidth:3, tracerStyle:'Glowing' });
+  const [stats,setStats] = useState(null);
+  const [toast,setToast] = useState(null);
+  const [manualMode,setManualMode] = useState(false);
+  const [manualPoints,setManualPoints] = useState([]);
+  const [exportProgress,setExportProgress] = useState(null);
+  const [analyzing,setAnalyzing] = useState(false);
+
+  const videoRef = useRef(null);
+  const overlayRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const animRef = useRef(null);
+  const settingsRef = useRef(settings);
+  const pointsRef = useRef(null);
+  const metaRef = useRef(null);
+  const metadataPollRef = useRef(null);
+
+  useEffect(()=>{ settingsRef.current=settings; },[settings]);
+  useEffect(()=>{ pointsRef.current=tracerPoints; },[tracerPoints]);
+  useEffect(()=>{ metaRef.current=videoMeta; },[videoMeta]);
+
+  const showToast = (msg,type)=>{
+    setToast({msg,type:type||'success'});
+    setTimeout(()=>setToast(null),3500);
+  };
+
+  // ── Set up metadata on a freshly mounted video ──
+  const setMetaFromVideo = ()=>{
+    const v=videoRef.current;
+    if (!v) return false;
+    if (v.videoWidth>0 && v.videoHeight>0) {
+      let dur=v.duration;
+      if (!isFinite(dur) || dur<=0) dur=4; // iOS blobs often report Infinity/NaN until played
+      const meta = { width:v.videoWidth, height:v.videoHeight, duration:dur };
+      setVideoMeta(meta); metaRef.current=meta;
+      if (overlayRef.current){ overlayRef.current.width=v.videoWidth; overlayRef.current.height=v.videoHeight; }
+      setVideoLoading(false);
+      return true;
+    }
+    return false;
+  };
+
+  // ── Poll for metadata in case events don't fire (iOS quirk) ──
+  useEffect(()=>{
+    if (!videoUrl) return;
+    setVideoLoading(true);
+    if (metadataPollRef.current) clearInterval(metadataPollRef.current);
+    metadataPollRef.current = setInterval(()=>{
+      if (setMetaFromVideo()) {
+        clearInterval(metadataPollRef.current);
+        metadataPollRef.current=null;
+      }
+    },200);
+    // safety: try to force a load on the video element
+    setTimeout(()=>{
+      const v=videoRef.current;
+      if (v && typeof v.load==='function') {
+        try { v.load(); } catch(_){}
+      }
+    },100);
+    return ()=>{ if(metadataPollRef.current){ clearInterval(metadataPollRef.current); metadataPollRef.current=null; } };
+  },[videoUrl]);
+
+  const handleFile = (file)=>{
+    if (!file || !file.type.startsWith('video/')) { showToast('Please upload a video file','error'); return; }
+    setVideoFile(file);
+    const url=URL.createObjectURL(file);
+    setVideoUrl(url);
+    setTracerPoints(null); setStats(null); pointsRef.current=null;
+    setManualPoints([]); setManualMode(false);
+    setVideoMeta(null); metaRef.current=null;
+    setScreen('preview');
+  };
+
+  // Animation loop (continuous render of tracer while video plays)
+  useEffect(()=>{
+    function loop(){
+      const v=videoRef.current, c=overlayRef.current, pts=pointsRef.current, meta=metaRef.current;
+      if (v && c && pts && meta && pts.length>=2 && !manualMode) {
+        const cf=v.currentTime*30;
+        const f0=pts[0].frame||0, f1=pts[pts.length-1].frame||0;
+        const prog = f1>f0 ? Math.max(0,Math.min(1,(cf-f0)/(f1-f0+10))) : 1;
+        drawTracer(c, pts, settingsRef.current, meta.width, meta.height, prog);
+      }
+      animRef.current=requestAnimationFrame(loop);
+    }
+    animRef.current=requestAnimationFrame(loop);
+    return ()=>{ if(animRef.current) cancelAnimationFrame(animRef.current); };
+  },[manualMode]);
+
+  useEffect(()=>{
+    if (tracerPoints && overlayRef.current && videoMeta && !manualMode) {
+      drawTracer(overlayRef.current, tracerPoints, settings, videoMeta.width, videoMeta.height, 1);
+    }
+  },[settings]);
+
+  // ── Wait for video to actually be ready ──
+  const ensureReady = async ()=>{
+    const v=videoRef.current;
+    if (!v) throw new Error('Video element missing');
+    if (setMetaFromVideo()) return;
+    // We're inside a user gesture (button tap) — use it to force iOS to load.
+    try { v.muted=true; v.load(); } catch(_){}
+    try {
+      const p=v.play();
+      if (p && p.then) await p.catch(()=>{});
+      // let it buffer a moment, then pause
+      await new Promise(r=>setTimeout(r,300));
+      if (setMetaFromVideo()) { try{v.pause();}catch(_){}; return; }
+      // nudge a seek to force dimension/duration resolution on stubborn blobs
+      try { v.currentTime = 0.1; } catch(_){}
+      await new Promise(r=>setTimeout(r,300));
+      try { v.pause(); } catch(_){}
+    } catch(_){}
+    const t0=Date.now();
+    while (Date.now()-t0 < 8000) {
+      if (setMetaFromVideo()) return;
+      await new Promise(r=>setTimeout(r,150));
+    }
+    const codes={1:'load aborted',2:'network error',3:'decode error',4:'format/codec not supported'};
+    const me=v.error;
+    const detail = me ? codes[me.code]||('code '+me.code)
+                      : 'readyState='+v.readyState+' net='+v.networkState+' w='+v.videoWidth;
+    throw new Error('Could not read video ('+detail+'). Tap the video ▶ first, or use Manual Trace.');
+  };
+
+  // ── Extract frames ──
+  const extractFrames = (videoEl, count)=> new Promise((resolve,reject)=>{
+    const frames=[]; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+    canvas.width=Math.min(videoEl.videoWidth,640);
+    canvas.height=Math.round(canvas.width*videoEl.videoHeight/videoEl.videoWidth);
+    const dur=videoEl.duration||3; const win=Math.min(3,dur);
+    const times=Array.from({length:count},(_,i)=>i*(win/count));
+    let i=0; let timeout=null;
+    const cap=()=>{
+      if (i>=times.length){ resolve({frames, analyzeW:canvas.width, analyzeH:canvas.height}); return; }
+      videoEl.currentTime=times[i];
+      timeout=setTimeout(()=>{ reject(new Error('Frame extraction timeout')); },5000);
+      videoEl.onseeked=()=>{
+        clearTimeout(timeout);
+        try {
+          ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+          frames.push({ time:times[i], frame:Math.round(times[i]*30), data:canvas.toDataURL('image/jpeg',0.7).split(',')[1] });
+          i++; cap();
+        } catch(err) { reject(err); }
+      };
+    };
+    cap();
+  });
+
+  const findImpact = async (frames)=>{
+    const content=[];
+    frames.forEach((f,i)=>{
+      content.push({type:'text',text:'Frame '+i+' (t='+f.time.toFixed(2)+'s):'});
+      content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:f.data}});
+    });
+    content.push({type:'text',text:'Sequential frames from a golf swing. Find the frame index where the club makes contact with the ball. Reply ONLY with JSON: {"impactFrameIndex":0}'});
+    const r=await fetch('/api/trace',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ max_tokens:200, messages:[{role:'user',content}] })
+    });
+    if (!r.ok) throw new Error('Vision API '+r.status);
+    const d=await r.json();
+    const t=(d.content&&d.content[0]&&d.content[0].text)||'{"impactFrameIndex":0}';
+    try { return JSON.parse(t.replace(/```json|```/g,'').trim()); } catch { return {impactFrameIndex:0}; }
+  };
+
+  const trackBall = async (frames, analyzeW, analyzeH)=>{
+    const content=[];
+    content.push({type:'text',text:'You are a golf ball tracker. Frames are '+analyzeW+'x'+analyzeH+' px. For each frame, give the ball center x,y in pixels from top-left. If not visible, estimate using a parabolic arc.'});
+    frames.forEach((f,i)=>{
+      content.push({type:'text',text:'Frame '+i+' (frameNum='+f.frame+'):'});
+      content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:f.data}});
+    });
+    content.push({type:'text',text:'Return ONLY JSON:\n{"points":[{"frame":0,"x":320,"y":400}],"stats":{"estimatedCarryYards":180,"apexHeightFt":45,"ballFlightShape":"draw","shotType":"iron"}}\nOne point per frame, smooth flight arc.'});
+    const r=await fetch('/api/trace',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ max_tokens:1200, messages:[{role:'user',content}] })
+    });
+    if (!r.ok) throw new Error('Vision API '+r.status);
+    const d=await r.json();
+    const t=(d.content&&d.content[0]&&d.content[0].text)||'';
+    let parsed;
+    try { parsed=JSON.parse(t.replace(/```json|```/g,'').trim()); } catch { return null; }
+    const meta=metaRef.current;
+    const sx=meta.width/analyzeW, sy=meta.height/analyzeH;
+    const pts=(parsed.points||[]).map(p=>({ frame:p.frame||0, x:p.x*sx, y:p.y*sy }));
+    return { points:pts, stats:parsed.stats||{} };
+  };
+
+  const syntheticArc = ()=>{
+    const meta=metaRef.current||{width:1920,height:1080};
+    const W=meta.width,H=meta.height;
+    const sX=W*0.3,sY=H*0.75, eX=W*0.85,eY=H*0.7, aY=H*0.22;
+    return {
+      points:Array.from({length:20},(_,i)=>{
+        const t=i/19;
+        const x=sX+(eX-sX)*t;
+        const y=(1-t)*(1-t)*sY+2*(1-t)*t*aY+t*t*eY;
+        return { frame:Math.round(t*60), x, y };
+      }),
+      stats:{estimatedCarryYards:165,apexHeightFt:40,ballFlightShape:'straight',shotType:'iron'}
+    };
+  };
+
+  const smooth = (pts)=> !pts||pts.length<2 ? pts : pts.map((p,i)=>{
+    const w=pts.slice(Math.max(0,i-1),i+2);
+    return { ...p, x:w.reduce((s,q)=>s+q.x,0)/w.length, y:w.reduce((s,q)=>s+q.y,0)/w.length };
+  });
+
+  const analyzeShot = async ()=>{
+    setAnalyzing(true); setProgress(0); setSteps([]); setStatusMsg('Loading video...');
+    try {
+      await ensureReady();
+      const v=videoRef.current;
+      setStatusMsg('Extracting frames...'); setSteps(['extract']); setProgress(15);
+      v.pause(); v.currentTime=0; await new Promise(r=>setTimeout(r,200));
+      const { frames, analyzeW, analyzeH } = await extractFrames(v, 18);
+      setProgress(32);
+
+      setStatusMsg('Detecting club impact...'); setSteps(['extract','impact']); setProgress(42);
+      const sample = frames.filter((_,i)=>i%2===0).slice(0,8);
+      let impactIdx=0;
+      try { const ir=await findImpact(sample); impactIdx=Math.max(0,(ir.impactFrameIndex||0)*2); } catch(err){ console.warn(err); }
+      setProgress(58);
+
+      setStatusMsg('Tracking ball flight...'); setSteps(['extract','impact','track']); setProgress(65);
+      const post = frames.slice(Math.max(0,impactIdx), impactIdx+14);
+      let result=null;
+      try { result=await trackBall(post, analyzeW, analyzeH); } catch(err){ console.warn(err); }
+      if (!result || !result.points || result.points.length<2) {
+        showToast('Could not track ball clearly. Showing estimated arc — use Manual Adjust to refine.','error');
+        result = syntheticArc();
+      }
+      setProgress(88);
+
+      setStatusMsg('Rendering tracer...'); setSteps(['extract','impact','track','render']); setProgress(94);
+      const finalPts = smooth(result.points);
+      pointsRef.current=finalPts; setTracerPoints(finalPts);
+      setStats(result.stats);
+      v.currentTime=0;
+      setProgress(100); setStatusMsg('Done!');
+      setTimeout(()=>{ setAnalyzing(false); setScreen('results'); },600);
+    } catch(err) {
+      console.error(err);
+      showToast('Analysis failed: '+(err.message||'unknown error'),'error');
+      setAnalyzing(false);
+    }
+  };
+
+  const enterManual = ()=>{
+    // ensure overlay canvas has a size even if video metadata hasn't loaded
+    const c=overlayRef.current, v=videoRef.current;
+    if (c && (!c.width || !c.height)) {
+      const w=(v&&v.videoWidth)||(v&&v.clientWidth)||640;
+      const h=(v&&v.videoHeight)||(v&&v.clientHeight)||360;
+      c.width=w; c.height=h;
+      if (!metaRef.current){ const m={width:w,height:h,duration:4}; metaRef.current=m; setVideoMeta(m); }
+    }
+    setManualMode(true);
+  };
+
+  const onCanvasTap = (clientX,clientY)=>{
+    if (!manualMode || !overlayRef.current) return;
+    const c=overlayRef.current; const rect=c.getBoundingClientRect();
+    const mw=(metaRef.current&&metaRef.current.width)||c.width||640;
+    const mh=(metaRef.current&&metaRef.current.height)||c.height||360;
+    const x=(clientX-rect.left)*(c.width/rect.width);
+    const y=(clientY-rect.top)*(c.height/rect.height);
+    const next=[...manualPoints,{x,y,frame:manualPoints.length*3}];
+    setManualPoints(next);
+    drawTracer(c, next, settings, mw, mh, 1);
+  };
+
+  const applyManual = ()=>{
+    if (manualPoints.length<2){ showToast('Tap at least 2 points along the flight','error'); return; }
+    pointsRef.current=manualPoints; setTracerPoints(manualPoints);
+    setStats({estimatedCarryYards:'—',apexHeightFt:'—',ballFlightShape:'manual',shotType:'manual'});
+    setManualMode(false); setScreen('results'); showToast('Manual trace applied!');
+  };
+
+  const clearManual = ()=>{
+    setManualMode(false); setManualPoints([]);
+    if (overlayRef.current){ const c=overlayRef.current; c.getContext('2d').clearRect(0,0,c.width,c.height); }
+  };
+
+  const exportVideo = async ()=>{
+    const v=videoRef.current, pts=pointsRef.current, meta=metaRef.current;
+    if (!v || !pts || !meta) { showToast('Nothing to export yet','error'); return; }
+    if (typeof MediaRecorder==='undefined' || !HTMLCanvasElement.prototype.captureStream) {
+      showToast('Export not supported on this browser. Try a screen recording.','error'); return;
+    }
+    try {
+      setExportProgress(0);
+      const canvas=document.createElement('canvas');
+      canvas.width=meta.width; canvas.height=meta.height;
+      const ctx=canvas.getContext('2d');
+      const stream=canvas.captureStream(30);
+      const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
+                 : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
+                 : 'video/webm;codecs=vp8';
+      const rec=new MediaRecorder(stream,{mimeType:mime});
+      const chunks=[];
+      rec.ondataavailable=ev=>{ if(ev.data.size>0) chunks.push(ev.data); };
+      rec.onstop=()=>{
+        const blob=new Blob(chunks,{type:mime});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download='tracer-shot.'+(mime.indexOf('mp4')>=0?'mp4':'webm'); a.click();
+        setExportProgress(null); showToast('Video exported!');
+      };
+      rec.start(100);
+      v.currentTime=0; await new Promise(r=>setTimeout(r,200));
+      try { await v.play(); } catch(_){}
+      const dur=meta.duration||4; const t0=Date.now();
+      const f0=pts[0].frame||0, f1=pts[pts.length-1].frame||0;
+      const tmp=document.createElement('canvas'); tmp.width=meta.width; tmp.height=meta.height;
+      const render=()=>{
+        const el=(Date.now()-t0)/1000;
+        setExportProgress(Math.min(99,Math.round((el/dur)*100)));
+        ctx.drawImage(v,0,0,canvas.width,canvas.height);
+        const cf=el*30; const prog=f1>f0?Math.max(0,Math.min(1,(cf-f0)/(f1-f0+5))):1;
+        if (prog>0){ drawTracer(tmp,pts,settingsRef.current,meta.width,meta.height,prog); ctx.drawImage(tmp,0,0); }
+        if (el<dur+0.4) requestAnimationFrame(render);
+        else { v.pause(); v.currentTime=0; rec.stop(); }
+      };
+      requestAnimationFrame(render);
+    } catch(err){ console.error(err); showToast('Export failed: '+(err.message||''),'error'); setExportProgress(null); }
+  };
+
+  // ── Render ──
+  const badge = analyzing?'PROCESSING':screen==='upload'?'READY':screen==='preview'?'LOADED':'COMPLETE';
+
+  // The video block — only mounted once, lives across preview/results screens
+  const videoBlock = videoUrl ? e('div',{className:'video-container'},
+    e('video',{
+      ref:videoRef, src:videoUrl,
+      controls:!manualMode, playsInline:true, muted:true, preload:'auto',
+      'webkit-playsinline':'true',
+      onLoadedMetadata:setMetaFromVideo,
+      onLoadedData:setMetaFromVideo,
+      onCanPlay:setMetaFromVideo,
+      onError:()=>showToast('Video failed to load — try another format','error'),
+      style:{width:'100%'}
+    }),
+    e('canvas',{
+      ref:overlayRef, className:'video-overlay-canvas',
+      style:{pointerEvents:manualMode?'auto':'none',cursor:manualMode?'crosshair':'default'},
+      onClick:ev=>onCanvasTap(ev.clientX,ev.clientY),
+      onTouchEnd:ev=>{ ev.preventDefault(); const t=ev.changedTouches[0]; if(t) onCanvasTap(t.clientX,t.clientY); }
+    }),
+    manualMode && e('div',{style:{position:'absolute',top:10,left:10,right:10,background:'rgba(0,0,0,0.85)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'var(--green)',textAlign:'center'}},
+      'TAP ALONG THE BALL FLIGHT — '+manualPoints.length+' POINT'+(manualPoints.length!==1?'S':'')),
+    videoLoading && e('div',{className:'video-loading-shade'},'LOADING VIDEO...')
+  ) : null;
+
+  // Circular progress ring math
+  const RING_R=58, RING_C=2*Math.PI*RING_R;
+  const ringOffset = RING_C*(1-progress/100);
+
+  return e('div',null,
+    e('div',{className:'header'},
+      e('div',{className:'logo'},'TRACER',e('span',null,'.AI')),
+      e('div',{className:'header-badge'},badge)
+    ),
+
+    // UPLOAD
+    screen==='upload' && e('div',{className:'screen'},
+      e('div',{style:{padding:'24px 20px 16px'}},
+        e('div',{style:{fontFamily:'Bebas Neue',fontSize:32,letterSpacing:4,lineHeight:1.1}},
+          'GOLF SHOT',e('br'),e('span',{style:{color:'var(--green)'}},'TRACER')),
+        e('div',{style:{fontSize:13,color:'var(--muted)',marginTop:8,lineHeight:1.6}},
+          'AI ball flight tracing. Upload your swing, get a TV-quality tracer.')
+      ),
+      e('div',{
+        className:'upload-zone'+(isDragging?' drag-over':''),
+        onDragOver:ev=>{ev.preventDefault();setIsDragging(true);},
+        onDragLeave:()=>setIsDragging(false),
+        onDrop:ev=>{ev.preventDefault();setIsDragging(false);handleFile(ev.dataTransfer.files[0]);}
+      },
+        e('div',{className:'upload-icon'},
+          e('svg',{viewBox:'0 0 24 24',fill:'none',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+            e('path',{d:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'}),
+            e('polyline',{points:'17 8 12 3 7 8'}),
+            e('line',{x1:12,y1:3,x2:12,y2:15})
+          )
+        ),
+        e('div',{className:'upload-title'},'UPLOAD SWING VIDEO'),
+        e('div',{className:'upload-sub'},'MP4, MOV, or any video',e('br'),'60fps recommended'),
+        e('button',{className:'upload-btn',onClick:()=>fileInputRef.current&&fileInputRef.current.click()},'CHOOSE VIDEO'),
+        e('input',{ref:fileInputRef,type:'file',accept:'video/*',style:{display:'none'},onChange:ev=>handleFile(ev.target.files[0])})
+      ),
+      e('div',{className:'tips'},
+        [
+          {icon:'📷',title:'Side-on',text:'Film perpendicular to the target line.'},
+          {icon:'⚡',title:'60fps',text:'Slo-mo on iPhone works great.'},
+          {icon:'☀️',title:'Bright Light',text:'Sunlight helps ball detection.'},
+          {icon:'📐',title:'Tripod',text:'Steady camera = clean tracking.'},
+        ].map(t=>e('div',{key:t.title,className:'tip-card'},
+          e('div',{className:'tip-icon'},t.icon),
+          e('div',{className:'tip-title'},t.title),
+          e('div',{className:'tip-text'},t.text)
+        ))
+      )
+    ),
+
+    // PREVIEW
+    screen==='preview' && e('div',{className:'screen'},
+      e('div',{style:{padding:'16px 20px 8px',fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)'}},'VIDEO PREVIEW'),
+      videoBlock,
+      videoMeta && e('div',{style:{display:'flex',gap:8,padding:'8px 20px',overflowX:'auto'}},
+        [videoMeta.width+'×'+videoMeta.height, formatTime(videoMeta.duration), (videoFile?(videoFile.size/1048576).toFixed(1):'0')+' MB'].map(x=>
+          e('span',{key:x,style:{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,padding:'4px 12px',fontSize:12,color:'var(--muted)',whiteSpace:'nowrap',flexShrink:0}},x))
+      ),
+      e('div',{style:{height:12}}),
+      e('div',{className:'controls'},
+        e('button',{className:'btn btn-primary',onClick:analyzeShot},
+          videoLoading?'▶ TAP TO LOAD & TRACE':'🔍 AUTO-DETECT BALL FLIGHT'),
+        !manualMode
+          ? e('button',{className:'btn btn-secondary',onClick:enterManual},'✏️ MANUAL TRACE')
+          : e('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+              e('button',{className:'btn btn-primary',onClick:applyManual},'✓ APPLY ('+manualPoints.length+' PTS)'),
+              e('button',{className:'btn btn-danger',onClick:clearManual},'✕ CANCEL MANUAL')
+            ),
+        e('button',{className:'btn btn-secondary',onClick:()=>{setScreen('upload');setVideoFile(null);setVideoUrl(null);setVideoMeta(null);metaRef.current=null;}},'← UPLOAD NEW VIDEO')
+      )
+    ),
+
+    // RESULTS
+    screen==='results' && e('div',{className:'screen'},
+      e('div',{style:{padding:'16px 20px 8px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        e('div',{style:{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)'}},'TRACER READY'),
+        e('span',{style:{fontSize:10,fontWeight:600,letterSpacing:2,textTransform:'uppercase',background:'var(--green-dim)',color:'var(--green)',border:'1px solid rgba(0,230,118,0.3)',padding:'3px 8px',borderRadius:20}},'LIVE')
+      ),
+      videoBlock,
+      e('div',{style:{height:16}}),
+      e('div',{className:'settings-panel'},
+        e('div',{className:'settings-header'},'⚙️ TRACER STYLE'),
+        e('div',{className:'settings-row'},
+          e('div',null,e('div',{className:'setting-label'},'Color')),
+          e('div',{className:'color-swatches'},
+            TRACER_COLORS.map(c=>e('div',{key:c.hex,className:'swatch'+(settings.color===c.hex?' selected':''),style:{background:c.hex},onClick:()=>setSettings(s=>({...s,color:c.hex}))}))
+          )
+        ),
+        e('div',{className:'settings-row'},
+          e('div',null,e('div',{className:'setting-label'},'Style')),
+          e('select',{value:settings.tracerStyle,onChange:ev=>setSettings(s=>({...s,tracerStyle:ev.target.value}))},
+            TRACER_STYLES.map(st=>e('option',{key:st},st)))
+        ),
+        e('div',{className:'settings-row'},
+          e('div',null,e('div',{className:'setting-label'},'Line Width'),e('div',{className:'setting-sub'},settings.lineWidth+'px')),
+          e('input',{type:'range',className:'slider',min:1,max:8,step:0.5,value:settings.lineWidth,onChange:ev=>setSettings(s=>({...s,lineWidth:parseFloat(ev.target.value)}))})
+        )
+      ),
+      stats && e('div',{className:'results-section'},
+        e('div',{className:'section-title'},'SHOT ANALYSIS'),
+        e('div',{className:'stat-grid'},
+          e('div',{className:'stat-card'},e('div',{className:'stat-value'},stats.estimatedCarryYards||'—'),e('div',{className:'stat-unit'},'yds'),e('div',{className:'stat-label'},'Est. Carry')),
+          e('div',{className:'stat-card'},e('div',{className:'stat-value'},stats.apexHeightFt||'—'),e('div',{className:'stat-unit'},'ft'),e('div',{className:'stat-label'},'Apex Height')),
+          e('div',{className:'stat-card'},e('div',{className:'stat-value',style:{fontSize:18,marginTop:4,textTransform:'uppercase'}},stats.ballFlightShape||'—'),e('div',{className:'stat-label'},'Ball Flight')),
+          e('div',{className:'stat-card'},e('div',{className:'stat-value',style:{fontSize:18,marginTop:4,textTransform:'uppercase'}},stats.shotType||'—'),e('div',{className:'stat-label'},'Shot Type'))
+        )
+      ),
+      e('div',{className:'results-section'},
+        e('div',{className:'section-title'},'EXPORT'),
+        e('div',{className:'export-card'},
+          e('div',{className:'export-row'},
+            e('div',{className:'export-icon',style:{background:'rgba(0,230,118,0.12)'}},'🎬'),
+            e('div',{className:'export-info'},e('div',{className:'export-name'},'Save Video with Tracer'),e('div',{className:'export-desc'},'Burned-in tracer')),
+            e('button',{className:'export-btn export-btn-green',onClick:exportVideo,disabled:exportProgress!==null},exportProgress!==null?exportProgress+'%':'SAVE')
+          ),
+          e('div',{className:'export-row'},
+            e('div',{className:'export-icon',style:{background:'rgba(68,136,255,0.12)'}},'🔄'),
+            e('div',{className:'export-info'},e('div',{className:'export-name'},'Re-analyze'),e('div',{className:'export-desc'},'Run AI tracking again')),
+            e('button',{className:'export-btn export-btn-outline',onClick:analyzeShot},'RETRY')
+          ),
+          e('div',{className:'export-row'},
+            e('div',{className:'export-icon',style:{background:'rgba(255,68,68,0.1)'}},'✏️'),
+            e('div',{className:'export-info'},e('div',{className:'export-name'},'Manual Adjust'),e('div',{className:'export-desc'},'Redraw the tracer')),
+            e('button',{className:'export-btn export-btn-outline',onClick:()=>{setManualMode(true);setManualPoints([]);setScreen('preview');}},'EDIT')
+          )
+        )
+      ),
+      e('div',{className:'controls'},
+        e('button',{className:'btn btn-secondary',onClick:()=>{setScreen('upload');setVideoFile(null);setVideoUrl(null);setTracerPoints(null);setStats(null);setVideoMeta(null);metaRef.current=null;pointsRef.current=null;}},'← NEW VIDEO')
+      )
+    ),
+
+    // ANALYZING OVERLAY (modal, doesn't unmount the video)
+    analyzing && e('div',{className:'analyzing-overlay'},
+      e('div',{className:'analyzing-title'},'ANALYZING'),
+      e('div',{className:'analyzing-sub'},'Claude Vision AI is tracking your ball flight'),
+      e('div',{className:'progress-ring'},
+        e('svg',{width:140,height:140},
+          e('circle',{className:'progress-ring-bg',cx:70,cy:70,r:RING_R,fill:'none',strokeWidth:6}),
+          e('circle',{className:'progress-ring-fg',cx:70,cy:70,r:RING_R,fill:'none',strokeWidth:6,strokeLinecap:'round',strokeDasharray:RING_C,strokeDashoffset:ringOffset})
+        ),
+        e('div',{className:'progress-pct'},progress+'%')
+      ),
+      e('div',{className:'status-msg'},statusMsg),
+      e('div',{className:'step-list'},
+        [{k:'extract',l:'Extract'},{k:'impact',l:'Impact'},{k:'track',l:'Track'},{k:'render',l:'Render'}].map(s=>
+          e('span',{key:s.k,className:'step-pill'+(progress===100?' done':steps.indexOf(s.k)>=0?' active':'')},s.l))
+      )
+    ),
+
+    toast && e('div',{className:'toast '+toast.type}, (toast.type==='success'?'✓ ':'✕ ')+toast.msg)
+  );
+}
+
+window.addEventListener('error', function(ev){
+  const root=document.getElementById('root');
+  if (root && !root.hasChildNodes()) {
+    root.innerHTML='<div class="errbox"><h2>Load error</h2><pre>'+(ev.message||'unknown')+'</pre></div>';
+  }
+});
+
+ReactDOM.render(e(ErrorBoundary,null,e(App)), document.getElementById('root'));
+</script>
+</body>
+</html>
