@@ -6,16 +6,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>TRACER</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 :root {
   --bg:#0a0a0a; --surface:#111; --s2:#1a1a1a; --border:#222;
   --green:#00e676; --gdim:rgba(0,230,118,0.12); --red:#ff4444;
-  --text:#fff; --muted:#666; --blue:#4488ff;
+  --text:#fff; --muted:#666; --blue:#448aff;
 }
 html,body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow-x:hidden; }
-#root { min-height:100vh; }
+#root { min-height:100dvh; }
 
 .header {
   position:fixed; top:0; left:0; right:0; z-index:100;
@@ -31,14 +31,9 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:'D
   background:var(--gdim); color:var(--green); border:1px solid rgba(0,230,118,0.3);
   padding:4px 10px; border-radius:20px;
 }
-.screen { padding-top:72px; min-height:100vh; padding-bottom:50px; }
+.screen { padding-top:72px; min-height:100dvh; padding-bottom:50px; }
 
-/* Upload */
-.upload-wrap { margin:20px; }
-.upload-hero { padding:'20px 20px 10px'; }
-.upload-hero h1 { font-family:'Bebas Neue'; font-size:36px; letter-spacing:4px; line-height:1.05; }
-.upload-hero h1 span { color:var(--green); }
-.upload-hero p { font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6; }
+/* ── Upload ── */
 .drop-zone {
   border:2px dashed var(--border); border-radius:16px; padding:44px 20px;
   text-align:center; background:var(--surface); margin:20px;
@@ -65,88 +60,12 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:'D
 .tip-t { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--green); margin-bottom:3px; }
 .tip-d { font-size:12px; color:var(--muted); line-height:1.45; }
 
-/* Video area */
-.vid-wrap {
-  margin:0 20px 0; border-radius:16px; overflow:hidden;
-  background:#000; position:relative; border:1px solid var(--border);
-  /* intrinsic aspect ratio filled by JS */
-}
-video { width:100%; height:100%; display:block; object-fit:contain; }
-.overlay-canvas {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  pointer-events:none;
-}
-.tap-canvas {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  cursor:crosshair;
-}
-
-/* Instruction banner */
-.instruct {
-  position:absolute; top:0; left:0; right:0;
-  background:rgba(0,0,0,0.82); backdrop-filter:blur(8px);
-  padding:10px 16px; display:flex; align-items:center; gap:10px; z-index:10;
-}
-.instruct-dot {
-  width:10px; height:10px; border-radius:50%; flex-shrink:0;
-  animation:pulse2 1s infinite;
-}
-@keyframes pulse2 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-.instruct-text { font-size:13px; font-weight:600; line-height:1.4; }
-.instruct-sub { font-size:11px; color:var(--muted); margin-top:1px; }
-
-/* Tap markers */
-.marker {
-  position:absolute; transform:translate(-50%,-50%);
-  pointer-events:none; animation:markerIn 0.2s ease;
-}
-@keyframes markerIn { from{opacity:0;transform:translate(-50%,-50%) scale(0.4)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-
-/* Controls */
-.controls { padding:0 20px; display:flex; flex-direction:column; gap:10px; }
-.btn {
-  width:100%; padding:16px; border:none; border-radius:12px;
-  font-family:'Bebas Neue'; font-size:20px; letter-spacing:3px;
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  cursor:pointer; transition:opacity 0.1s, transform 0.1s;
-}
-.btn:active { opacity:0.85; transform:scale(0.98); }
-.btn-green { background:var(--green); color:#000; }
-.btn-dark  { background:var(--s2); color:var(--text); border:1px solid var(--border); }
-.btn-red   { background:rgba(255,68,68,0.1); color:var(--red); border:1px solid rgba(255,68,68,0.3); }
-.btn:disabled { opacity:0.35; pointer-events:none; }
-
-/* Step pills */
-.steps { display:flex; gap:6px; padding:8px 20px; overflow-x:auto; }
-.spill {
-  font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
-  padding:5px 12px; border-radius:20px; white-space:nowrap; flex-shrink:0;
-  background:var(--border); color:var(--muted);
-}
-.spill.active { background:var(--gdim); color:var(--green); border:1px solid rgba(0,230,118,0.35); }
-.spill.done { background:#192e19; color:#4caf50; }
-
-/* Analyzing overlay */
-/* ── FULLSCREEN MARK MODE ── */
-.fs-mark-screen {
-  position:fixed; inset:0; z-index:200; background:#000; display:flex; flex-direction:column;
-}
-.fs-video-wrap {
-  position:relative; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center;
-}
-.fs-video-wrap video { width:100%; height:100%; object-fit:contain; display:block; }
-.fs-canvas {
-  position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;
-}
-.fs-tap-layer {
-  position:absolute; inset:0; z-index:5; cursor:crosshair;
-}
-/* Floating top bar */
+/* ── Fullscreen mark mode ── */
 .fs-topbar {
-  position:absolute; top:0; left:0; right:0; z-index:10;
+  position:absolute; top:0; left:0; right:0; z-index:12;
   padding:calc(14px + env(safe-area-inset-top,0px)) 16px 12px;
   background:linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
-  display:flex; align-items:flex-start; gap:12px;
+  display:flex; align-items:flex-start; gap:12px; pointer-events:none;
 }
 .fs-step-badge {
   background:var(--gdim); border:1px solid rgba(0,230,118,0.35);
@@ -154,23 +73,18 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
   font-family:'Bebas Neue'; font-size:13px; letter-spacing:2px; color:var(--green);
   white-space:nowrap;
 }
-.fs-instruct-text { flex:1; }
 .fs-instruct-title { font-size:15px; font-weight:700; line-height:1.2; }
-.fs-instruct-sub { font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px; }
-/* Step dots */
+.fs-instruct-sub { font-size:12px; color:rgba(255,255,255,0.65); margin-top:2px; }
 .fs-stepdots {
-  position:absolute; top:calc(env(safe-area-inset-top,0px) + 60px); left:0; right:0;
-  display:flex; justify-content:center; gap:10px; z-index:10;
+  position:absolute; top:calc(env(safe-area-inset-top,0px) + 64px); left:0; right:0;
+  display:flex; justify-content:center; gap:10px; z-index:12; pointer-events:none;
 }
-.fs-dot {
-  width:9px; height:9px; border-radius:50%;
-  border:2px solid rgba(255,255,255,0.3);
-}
+.fs-dot { width:9px; height:9px; border-radius:50%; border:2px solid rgba(255,255,255,0.3); }
 .fs-dot.done  { background:#4caf50; border-color:#4caf50; }
 .fs-dot.active{ background:var(--green); border-color:var(--green); box-shadow:0 0 8px var(--green); }
-/* Floating bottom panel */
+
 .fs-bottom {
-  position:absolute; bottom:0; left:0; right:0; z-index:10;
+  position:absolute; bottom:0; left:0; right:0; z-index:12;
   background:linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent 100%);
   padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));
 }
@@ -179,7 +93,7 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
   width:40px; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);
   background:rgba(255,255,255,0.08); color:#fff; font-size:20px;
   display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
+  user-select:none; -webkit-user-select:none;
 }
 .fs-frame-btn:active { background:var(--green); color:#000; }
 .fs-scrub {
@@ -202,56 +116,17 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
 .fs-fps-btn.on { background:rgba(0,230,118,0.15); color:var(--green); border-color:rgba(0,230,118,0.4); }
 .fs-action-row { display:flex; gap:8px; margin-top:10px; }
 .fs-action-btn {
-  flex:1; padding:11px; border-radius:10px; border:none; cursor:pointer;
+  flex:1; padding:12px; border-radius:10px; border:none; cursor:pointer;
   font-family:'Bebas Neue'; font-size:15px; letter-spacing:2px; text-align:center;
+  user-select:none; -webkit-user-select:none;
 }
 .fs-action-btn:active { opacity:0.8; }
-.fs-btn-redo { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; }
-.fs-btn-ai   { background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); color:var(--green); }
-.fs-btn-back { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); }
-/* Marker rings */
-.fs-marker {
-  position:absolute; transform:translate(-50%,-50%); pointer-events:none; z-index:8;
-  animation:markerPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
-}
-@keyframes markerPop { from{opacity:0;transform:translate(-50%,-50%) scale(0.2)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-.frame-scrubber {
-  margin:10px 20px 0; background:var(--surface); border:1px solid var(--border);
-  border-radius:14px; padding:14px 16px;
-}
-.fs-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.fs-label { font-family:'Bebas Neue'; font-size:14px; letter-spacing:2px; color:var(--green); }
-.fs-counter { font-family:'Bebas Neue'; font-size:18px; letter-spacing:1px; color:var(--text); }
-.fs-counter span { font-size:11px; color:var(--muted); margin-left:2px; }
-.fs-slider-row { display:flex; align-items:center; gap:10px; }
-.fs-slider { flex:1; -webkit-appearance:none; appearance:none; height:5px; border-radius:3px; background:var(--border); outline:none; cursor:pointer; }
-.fs-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--green); cursor:pointer; box-shadow:0 0 8px rgba(0,230,118,0.5); }
-.frame-btn {
-  width:42px; height:42px; border-radius:10px; border:1px solid var(--border);
-  background:var(--s2); color:var(--text); font-size:18px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; cursor:pointer;
-}
-.frame-btn:active { background:var(--green); color:#000; transform:scale(0.93); }
-.fs-fps { display:flex; gap:6px; margin-top:10px; }
-.fps-btn {
-  font-size:11px; font-weight:600; letter-spacing:1px; padding:5px 10px;
-  border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer;
-}
-.fps-btn.on { background:var(--gdim); color:var(--green); border-color:rgba(0,230,118,0.35); }
-.fs-time { font-size:11px; color:var(--muted); text-align:center; margin-top:6px; }
-  position:fixed; inset:0; background:rgba(10,10,10,0.97); z-index:300;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px;
-}
-.analyze-ring { width:130px; height:130px; position:relative; margin-bottom:24px; }
-.analyze-ring svg { transform:rotate(-90deg); }
-.analyze-pct {
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  font-family:'Bebas Neue'; font-size:36px; color:var(--green);
-}
-.analyze-title { font-family:'Bebas Neue'; font-size:30px; letter-spacing:4px; margin-bottom:8px; }
-.analyze-msg { font-size:13px; color:var(--muted); text-align:center; min-height:18px; }
+.fs-btn-green { background:var(--green); color:#000; }
+.fs-btn-dim   { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; }
+.fs-btn-back  { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); }
+.fs-btn-disabled { opacity:0.35; pointer-events:none; }
 
-/* Style panel */
+/* ── Style panel / results ── */
 .style-panel { margin:12px 20px 0; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
 .sp-header { padding:12px 16px; border-bottom:1px solid var(--border); font-family:'Bebas Neue'; font-size:15px; letter-spacing:2px; color:var(--green); }
 .sp-row { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
@@ -261,24 +136,16 @@ video { width:100%; height:100%; display:block; object-fit:contain; }
 .swatches { display:flex; gap:7px; }
 .sw { width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
 .sw.on { border-color:#fff; transform:scale(1.2); }
-input[type=range] {
+input[type=range].sp-range {
   -webkit-appearance:none; width:110px; height:4px; border-radius:2px;
   background:var(--border); outline:none;
 }
-input[type=range]::-webkit-slider-thumb {
+input[type=range].sp-range::-webkit-slider-thumb {
   -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
   background:var(--green); cursor:pointer;
 }
 select { background:var(--s2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:5px 10px; font-size:12px; }
 
-/* Stats */
-.stats-grid { margin:12px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.stat { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px; }
-.stat-val { font-family:'Bebas Neue'; font-size:26px; color:var(--green); line-height:1; }
-.stat-unit { font-size:10px; color:var(--muted); }
-.stat-lbl { font-size:11px; color:var(--muted); margin-top:3px; }
-
-/* Export card */
 .export-card { margin:12px 20px 0; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
 .ex-row { padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
 .ex-row:last-child { border-bottom:none; }
@@ -290,8 +157,18 @@ select { background:var(--s2); color:var(--text); border:1px solid var(--border)
 .ex-btn:active { opacity:0.8; }
 .ex-green { background:var(--green); color:#000; }
 .ex-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+.btn {
+  width:100%; padding:16px; border:none; border-radius:12px;
+  font-family:'Bebas Neue'; font-size:20px; letter-spacing:3px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  cursor:pointer;
+}
+.btn:active { opacity:0.85; transform:scale(0.98); }
+.btn-dark { background:var(--s2); color:var(--text); border:1px solid var(--border); }
+.controls { padding:0 20px; display:flex; flex-direction:column; gap:10px; }
+.section-title { font-family:'Bebas Neue'; font-size:18px; letter-spacing:3px; color:var(--green); padding:0 20px; margin:14px 0 8px; }
 
-/* Toast */
+/* ── Toast ── */
 .toast {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
   background:var(--surface); border:1px solid var(--border); border-radius:12px;
@@ -302,9 +179,6 @@ select { background:var(--s2); color:var(--text); border:1px solid var(--border)
 .toast.ok { border-color:rgba(0,230,118,0.4); color:var(--green); }
 .toast.err { border-color:rgba(255,68,68,0.4); color:var(--red); }
 @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(16px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-
-.gap { height:12px; }
-.section-title { font-family:'Bebas Neue'; font-size:18px; letter-spacing:3px; color:var(--green); padding:0 20px; margin:14px 0 8px; }
 </style>
 </head>
 <body>
@@ -317,144 +191,202 @@ const { useState, useEffect, useRef } = React;
 const h = React.createElement;
 
 // ── CONSTANTS ──────────────────────────────────────────────
-const COLORS = ['#00e676','#ffffff','#ffd700','#ff6b35','#4488ff','#ff4444'];
+const COLORS = ['#00e676','#ffffff','#ffd700','#ff6b35','#448aff','#ff4444'];
 const STYLES = ['Broadcast','Glow','Dotted','Classic'];
-const R = 52, CIRC = 2*Math.PI*R;
+const LS_KEY = 'tracer-settings-v2';
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (s && s.color) return s;
+  } catch(_){}
+  return { color:'#00e676', lineWidth:3.5, style:'Broadcast' };
+}
+
+// ── GEOMETRY / SMOOTHING ───────────────────────────────────
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+// Resample a polyline to evenly spaced points
+function resample(pts, spacing) {
+  if (pts.length < 2) return pts.slice();
+  const out = [pts[0]];
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    let prev = out.length ? { ...pts[i-1] } : pts[i-1];
+    let cur = pts[i];
+    let d = dist(pts[i-1], cur);
+    let from = pts[i-1];
+    while (acc + d >= spacing) {
+      const t = (spacing - acc) / d;
+      const np = { x: from.x + (cur.x - from.x) * t, y: from.y + (cur.y - from.y) * t };
+      out.push(np);
+      from = np;
+      d = dist(from, cur);
+      acc = 0;
+    }
+    acc += d;
+  }
+  const last = pts[pts.length - 1];
+  if (dist(out[out.length-1], last) > spacing * 0.25) out.push(last);
+  return out;
+}
+
+// Moving-average smoothing, endpoints pinned
+function movingAvg(pts, w) {
+  if (pts.length < 3) return pts.slice();
+  const out = [];
+  for (let i = 0; i < pts.length; i++) {
+    let sx = 0, sy = 0, n = 0;
+    for (let j = Math.max(0, i - w); j <= Math.min(pts.length - 1, i + w); j++) {
+      sx += pts[j].x; sy += pts[j].y; n++;
+    }
+    out.push({ x: sx / n, y: sy / n });
+  }
+  out[0] = pts[0];
+  out[out.length - 1] = pts[pts.length - 1];
+  return out;
+}
+
+// Catmull-Rom interpolation → silky curve through smoothed points
+function catmullRom(pts, segs) {
+  if (pts.length < 3) return pts.slice();
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i],
+          p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let j = 0; j < segs; j++) {
+      const t = j / segs, t2 = t * t, t3 = t2 * t;
+      out.push({
+        x: 0.5 * ((2*p1.x) + (-p0.x + p2.x)*t + (2*p0.x - 5*p1.x + 4*p2.x - p3.x)*t2 + (-p0.x + 3*p1.x - 3*p2.x + p3.x)*t3),
+        y: 0.5 * ((2*p1.y) + (-p0.y + p2.y)*t + (2*p0.y - 5*p1.y + 4*p2.y - p3.y)*t2 + (-p0.y + 3*p1.y - 3*p2.y + p3.y)*t3)
+      });
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+// Full pipeline: raw finger points → broadcast-smooth path snapped to start point
+function buildPath(raw, startPt, vidW) {
+  if (!raw || raw.length < 3) return null;
+  // Drop duplicate/jittery points, snap start to the marked ball position
+  let pts = raw.filter((p, i) => i === 0 || dist(p, raw[i-1]) > 1);
+  if (startPt) {
+    const snapR = vidW * 0.03;
+    pts = pts.filter(p => dist(p, startPt) > snapR);
+    pts.unshift(startPt);
+  }
+  if (pts.length < 3) return null;
+  let s = resample(pts, Math.max(6, vidW / 70));  // even spacing
+  s = movingAvg(s, 2);                             // kill finger shake
+  s = catmullRom(s, 5);                            // smooth curve
+  s = resample(s, Math.max(3, vidW / 220));        // uniform density → even animation speed
+  return s.length >= 4 ? s : null;
+}
 
 // ── TRACER DRAW (broadcast-quality) ────────────────────────
-// points: [{x,y}] in canvas-native pixels
-// progress: 0→1 how far along the arc to draw
 function drawBroadcastTracer(ctx, pts, progress, color, lw, style) {
   if (!pts || pts.length < 2) return;
   const n = Math.max(2, Math.round(pts.length * progress));
   const vis = pts.slice(0, n);
-
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   if (style === 'Dotted') {
-    // Dots that get larger toward the ball
-    vis.forEach((p, i) => {
-      if (i === 0) return;
+    for (let i = 1; i < vis.length; i += 3) {
       const t = i / vis.length;
       const r = lw * (0.6 + t * 1.4);
       ctx.save();
       ctx.globalAlpha = 0.25 + t * 0.75;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+      ctx.arc(vis[i].x, vis[i].y, r, 0, Math.PI * 2);
       ctx.fillStyle = color;
       if (t > 0.7) { ctx.shadowColor = color; ctx.shadowBlur = 6; }
       ctx.fill();
       ctx.restore();
-    });
+    }
   } else {
-    // Draw the trail in segments — oldest fades, newest is bright
     for (let i = 1; i < vis.length; i++) {
-      const t = i / vis.length; // 0=oldest, 1=newest
-      const alpha = style === 'Classic' ? (0.2 + t * 0.8) : (0.15 + t * 0.85);
-      const segW  = lw * (0.4 + t * 0.6);
-
+      const t = i / vis.length;
+      const alpha = 0.15 + t * 0.85;
+      const segW = lw * (0.4 + t * 0.6);
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.strokeStyle = color;
       ctx.lineWidth = segW;
       ctx.lineCap = 'round';
-
       if (style === 'Broadcast' || style === 'Glow') {
         ctx.shadowColor = color;
         ctx.shadowBlur = style === 'Glow' ? 18 * t : 8 * t;
       }
-      if (style === 'Classic') ctx.setLineDash([segW*2, segW]);
-
+      if (style === 'Classic') ctx.setLineDash([segW * 2, segW]);
       ctx.beginPath();
       ctx.moveTo(vis[i-1].x, vis[i-1].y);
-      ctx.lineTo(vis[i].x,   vis[i].y);
-      ctx.stroke();
-      ctx.restore();
-    }
-    // Clean stroke over entire path for smoothness
-    if (style !== 'Classic') {
-      ctx.save();
-      ctx.globalAlpha = 0.0; // invisible — just to clear shadowBlur
-      ctx.beginPath();
-      vis.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.lineTo(vis[i].x, vis[i].y);
       ctx.stroke();
       ctx.restore();
     }
   }
 
-  // ── IMPACT DOT (start of trail, always visible) ──
+  // Impact dot
   if (progress > 0.02) {
     const s = vis[0];
     ctx.save();
-    ctx.beginPath(); ctx.arc(s.x, s.y, lw*1.8, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(s.x, s.y, lw * 1.8, 0, Math.PI * 2);
     ctx.fillStyle = color; ctx.globalAlpha = 0.7;
     ctx.shadowColor = color; ctx.shadowBlur = 10;
     ctx.fill(); ctx.restore();
   }
 
-  // ── BALL DOT (leading edge — bright white circle) ──
+  // Ball at leading edge
   const head = vis[vis.length - 1];
   ctx.save();
-  // Outer glow
-  ctx.beginPath(); ctx.arc(head.x, head.y, lw*3.5, 0, Math.PI*2);
+  ctx.beginPath(); ctx.arc(head.x, head.y, lw * 3.5, 0, Math.PI * 2);
   ctx.fillStyle = color; ctx.globalAlpha = 0.25;
   ctx.shadowColor = color; ctx.shadowBlur = 20;
   ctx.fill();
-  // White ball
-  ctx.beginPath(); ctx.arc(head.x, head.y, lw*2.2, 0, Math.PI*2);
+  ctx.beginPath(); ctx.arc(head.x, head.y, lw * 2.2, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 1;
   ctx.shadowColor = color; ctx.shadowBlur = 12;
   ctx.fill(); ctx.restore();
 }
 
-// ── GENERATE SMOOTH ARC from 3 points (impact, apex, landing) ──
-// Uses a quadratic Bézier — control point derived so apex falls at t=0.5
-function makeArc(impact, apex, landing, numPts) {
-  numPts = numPts || 60;
-  // Solve for Bézier control point: B(0.5) = apex
-  // B(t) = (1-t)²·P0 + 2t(1-t)·P1 + t²·P2
-  // At t=0.5: apex = 0.25·P0 + 0.5·P1 + 0.25·P2
-  // → P1 = 2·apex - 0.5·P0 - 0.5·P2
-  const cx = 2*apex.x - 0.5*impact.x - 0.5*landing.x;
-  const cy = 2*apex.y - 0.5*impact.y - 0.5*landing.y;
-  const pts = [];
-  for (let i = 0; i < numPts; i++) {
-    const t = i / (numPts - 1);
-    const mt = 1 - t;
-    pts.push({
-      x: mt*mt*impact.x + 2*mt*t*cx + t*t*landing.x,
-      y: mt*mt*impact.y + 2*mt*t*cy + t*t*landing.y,
-    });
-  }
-  return pts;
+// Start-point marker drawn ON the canvas (always perfectly aligned with video)
+function drawStartMarker(ctx, pt, color) {
+  if (!pt) return;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.setLineDash([4, 3]);
+  ctx.shadowColor = color; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(pt.x, pt.y, 14, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
 }
 
-// Convert tap coords (relative to displayed video box) to canvas-native pixels
-function tapToCanvas(clientX, clientY, videoEl, canvasEl) {
+// Convert a screen tap to canvas-native pixels, accounting for object-fit:contain letterboxing
+function tapToCanvas(clientX, clientY, videoEl) {
   const rect = videoEl.getBoundingClientRect();
   const vW = videoEl.videoWidth, vH = videoEl.videoHeight;
-  const dW = rect.width, dH = rect.height;
-  // Video is object-fit:contain — calculate letterbox offsets
-  const vidRatio = vW / vH;
-  const boxRatio = dW / dH;
+  const vidRatio = vW / vH, boxRatio = rect.width / rect.height;
   let drawW, drawH, offX, offY;
   if (vidRatio > boxRatio) {
-    drawW = dW; drawH = dW / vidRatio;
-    offX = 0; offY = (dH - drawH) / 2;
+    drawW = rect.width; drawH = drawW / vidRatio;
+    offX = 0; offY = (rect.height - drawH) / 2;
   } else {
-    drawH = dH; drawW = dH * vidRatio;
-    offX = (dW - drawW) / 2; offY = 0;
+    drawH = rect.height; drawW = drawH * vidRatio;
+    offX = (rect.width - drawW) / 2; offY = 0;
   }
-  const relX = clientX - rect.left - offX;
-  const relY = clientY - rect.top  - offY;
-  const nx = relX / drawW, ny = relY / drawH;
-  return { x: nx * vW, y: ny * vH };
+  return {
+    x: (clientX - rect.left - offX) / drawW * vW,
+    y: (clientY - rect.top - offY) / drawH * vH,
+  };
 }
 
-// ── ERROR BOUNDARY ──────────────────────────────────────────
+// ── ERROR BOUNDARY ─────────────────────────────────────────
 class ErrBoundary extends React.Component {
-  constructor(p){ super(p); this.state={err:null}; }
-  static getDerivedStateFromError(e){ return {err:e}; }
+  constructor(p){ super(p); this.state = { err:null }; }
+  static getDerivedStateFromError(e){ return { err:e }; }
   render(){
     if (this.state.err) return h('div',{style:{margin:'80px 20px',background:'#111',border:'1px solid #ff4444',borderRadius:14,padding:20}},
       h('div',{style:{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:2,color:'#ff4444',marginBottom:10}},'SOMETHING BROKE'),
@@ -467,421 +399,567 @@ class ErrBoundary extends React.Component {
 
 // ══════════════════════════════════════════════════════════
 // MAIN APP
+// Flow: upload → mark (step 0: tap ball, step 1: set landing, step 2: draw) → results
 // ══════════════════════════════════════════════════════════
 function App() {
   // ── refs ──
   const videoRef   = useRef(null);
   const overlayRef = useRef(null);
-  const tapRef     = useRef(null);
+  const drawRef    = useRef(null);   // touch layer for tapping + drawing
   const fileRef    = useRef(null);
   const animRef    = useRef(null);
-  const arcRef     = useRef(null);      // computed arc points (canvas-native)
-  const impactTimeRef  = useRef(0);     // video.currentTime when impact was tapped
-  const landingTimeRef = useRef(null);  // video.currentTime when landing was tapped (null = use flightDur)
+
+  const startPtRef   = useRef(null); // {x,y} canvas-native ball position at impact
+  const startTimeRef = useRef(0);    // video time of impact
+  const endTimeRef   = useRef(null); // video time of landing
+  const rawRef       = useRef([]);   // raw finger points during draw
+  const pathRef      = useRef(null); // final smoothed tracer path
+  const drawingRef   = useRef(false);
+
+  const settingsRef = useRef(loadSettings());
+  const markStepRef = useRef(0);
+  const screenRef   = useRef('upload');
 
   // ── state ──
-  const [screen, setScreen]       = useState('upload'); // upload | mark | preview | results
-  const [videoUrl, setVideoUrl]   = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
-  const [isDrag, setIsDrag]       = useState(false);
-  const [vidReady, setVidReady]   = useState(false);
-  const [markStep, setMarkStep]   = useState(0); // 0=impact 1=apex 2=landing 3=done
-  const [markers, setMarkers]     = useState([]); // [{x,y,label,cx,cy}] screen coords for display
-  const [arcPoints, setArcPoints] = useState(null);
-  const [settings, setSettings]   = useState({ color:'#00e676', lineWidth:3.5, style:'Broadcast', flightSec:3 });
-  const [toast, setToast]         = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analyzeMsg, setAnalyzeMsg] = useState('');
-  const [analyzePct, setAnalyzePct] = useState(0);
-  const [exportPct, setExportPct]   = useState(null);
+  const [screen, setScreen]     = useState('upload'); // upload | mark | results
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [isDrag, setIsDrag]     = useState(false);
+  const [vidReady, setVidReady] = useState(false);
+  const [markStep, setMarkStep] = useState(0); // 0 tap ball | 1 set landing | 2 draw
+  const [hasStart, setHasStart] = useState(false);
+  const [hasPath, setHasPath]   = useState(false);
+  const [settings, setSettings] = useState(settingsRef.current);
+  const [toast, setToast]       = useState(null);
+  const [exportPct, setExportPct] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const [fps, setFps]           = useState(30);
+  const [fps, setFps] = useState(30);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames, setTotalFrames]   = useState(0);
 
-  // Update frame counter as video plays/scrubs
+  // keep refs in sync (animation loop + native listeners read these)
+  useEffect(() => { settingsRef.current = settings; try { localStorage.setItem(LS_KEY, JSON.stringify(settings)); } catch(_){} }, [settings]);
+  useEffect(() => { markStepRef.current = markStep; }, [markStep]);
+  useEffect(() => { screenRef.current = screen; }, [screen]);
+
+  const toastTimerRef = useRef(null);
+  const showToast = (msg, type) => {
+    setToast({ msg, type: type || 'ok' });
+    clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2600);
+  };
+
+  // ── Canvas layout: size + position overlay to EXACTLY match the displayed video content
+  // (fixes letterbox misalignment in fullscreen mode)
+  const layoutOverlay = () => {
+    const v = videoRef.current, c = overlayRef.current;
+    if (!v || !c || !v.videoWidth) return;
+    const rect = v.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const vr = v.videoWidth / v.videoHeight, br = rect.width / rect.height;
+    let w, hh, x, y;
+    if (vr > br) { w = rect.width; hh = w / vr; x = 0; y = (rect.height - hh) / 2; }
+    else { hh = rect.height; w = hh * vr; x = (rect.width - w) / 2; y = 0; }
+    c.style.left = x + 'px'; c.style.top = y + 'px';
+    c.style.width = w + 'px'; c.style.height = hh + 'px';
+    if (c.width !== v.videoWidth || c.height !== v.videoHeight) {
+      c.width = v.videoWidth; c.height = v.videoHeight; // resets canvas — redraw below
+    }
+    redrawCurrent();
+  };
+
+  // Redraw whatever belongs on the overlay for the current mode
+  const redrawCurrent = () => {
+    const c = overlayRef.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    const s = settingsRef.current;
+    if (screenRef.current === 'results' && pathRef.current) {
+      const v = videoRef.current;
+      if (v && !v.paused) return; // animation loop owns the canvas while playing
+      drawBroadcastTracer(ctx, pathRef.current, 1, s.color, s.lineWidth, s.style);
+    } else if (screenRef.current === 'mark') {
+      ctx.clearRect(0, 0, c.width, c.height);
+      if (markStepRef.current === 2 && rawRef.current.length > 1) renderDrawPreview();
+      drawStartMarker(ctx, startPtRef.current, s.color);
+    } else {
+      ctx.clearRect(0, 0, c.width, c.height);
+    }
+  };
+
+  // Live preview while finger is drawing
+  const renderDrawPreview = () => {
+    const c = overlayRef.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    const s = settingsRef.current;
+    ctx.clearRect(0, 0, c.width, c.height);
+    drawStartMarker(ctx, startPtRef.current, s.color);
+    const pts = rawRef.current;
+    if (pts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.lineWidth * 1.2;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.globalAlpha = 0.9;
+      ctx.shadowColor = s.color; ctx.shadowBlur = 10;
+      ctx.beginPath();
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  // Relayout on resize / rotation / mode change
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
+    layoutOverlay();
+    const onR = () => setTimeout(layoutOverlay, 60);
+    window.addEventListener('resize', onR);
+    window.addEventListener('orientationchange', onR);
+    return () => { window.removeEventListener('resize', onR); window.removeEventListener('orientationchange', onR); };
+  }, [screen, markStep, vidReady]);
+
+  // ── Frame scrubber ──
+  useEffect(() => {
+    const v = videoRef.current; if (!v) return;
     const onTime = () => setCurrentFrame(Math.round(v.currentTime * fps));
     v.addEventListener('timeupdate', onTime);
     return () => v.removeEventListener('timeupdate', onTime);
   }, [fps, vidReady]);
 
-  // Set total frames when video ready
   useEffect(() => {
     const v = videoRef.current;
-    if (v && v.duration && isFinite(v.duration)) {
-      setTotalFrames(Math.round(v.duration * fps));
-    }
+    if (v && v.duration && isFinite(v.duration)) setTotalFrames(Math.round(v.duration * fps));
   }, [vidReady, fps]);
 
   const seekToFrame = (frame) => {
     const v = videoRef.current; if (!v) return;
+    v.pause();
     const clamped = Math.max(0, Math.min(totalFrames, frame));
     v.currentTime = clamped / fps;
     setCurrentFrame(clamped);
   };
+  const stepFrame = (d) => seekToFrame(Math.round(videoRef.current.currentTime * fps) + d);
 
-  const stepFrame = (delta) => seekToFrame(currentFrame + delta);
-
-  const showToast = (msg, type) => {
-    setToast({ msg, type: type || 'ok' });
-    setTimeout(() => setToast(null), 3500);
+  const togglePlay = () => {
+    const v = videoRef.current; if (!v) return;
+    if (v.paused) v.play().catch(()=>{}); else v.pause();
   };
 
   // ── Load file ──
   const loadFile = (file) => {
     if (!file || !file.type.startsWith('video/')) { showToast('Please pick a video file', 'err'); return; }
-    setVideoFile(file);
     setVideoUrl(URL.createObjectURL(file));
-    setVidReady(false); setMarkStep(0); setMarkers([]);
-    setArcPoints(null); arcRef.current = null;
+    setVidReady(false);
+    resetAll();
     setScreen('mark');
   };
 
-  // ── Video ready ──
-  const onVidReady = () => {
-    const v = videoRef.current; if (!v) return;
-    if (v.videoWidth > 0) {
-      setVidReady(true);
-      // Size overlay canvas to native video resolution
-      const c = overlayRef.current;
-      if (c) { c.width = v.videoWidth; c.height = v.videoHeight; }
-      // Force unmute
-      try { v.muted = false; } catch(_){}
-    }
+  const resetAll = () => {
+    setMarkStep(0); setHasStart(false); setHasPath(false);
+    startPtRef.current = null; startTimeRef.current = 0; endTimeRef.current = null;
+    rawRef.current = []; pathRef.current = null;
+    const c = overlayRef.current;
+    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
   };
 
-  // Poll for video ready (iOS quirk)
+  // ── Video ready (with iOS polling fallback) ──
+  const onVidReady = () => {
+    const v = videoRef.current;
+    if (v && v.videoWidth > 0) { setVidReady(true); setTimeout(layoutOverlay, 50); }
+  };
   useEffect(() => {
     if (!videoUrl) return;
     const id = setInterval(() => {
       const v = videoRef.current;
-      if (v && v.videoWidth > 0) { setVidReady(true); clearInterval(id); }
+      if (v && v.videoWidth > 0) { setVidReady(true); layoutOverlay(); clearInterval(id); }
     }, 150);
     return () => clearInterval(id);
   }, [videoUrl]);
 
-  // ── Animation loop: draw tracer synced to real video timestamps ──
+  // Track play state
+  useEffect(() => {
+    const v = videoRef.current; if (!v) return;
+    const onPlay = () => setIsPlaying(true);
+    const onStop = () => { setIsPlaying(false); redrawCurrent(); };
+    v.addEventListener('play', onPlay);
+    v.addEventListener('pause', onStop);
+    v.addEventListener('ended', onStop);
+    return () => { v.removeEventListener('play', onPlay); v.removeEventListener('pause', onStop); v.removeEventListener('ended', onStop); };
+  }, [vidReady]);
+
+  // ── TOUCH LAYER: tap to mark ball (step 0) + finger draw (step 2) ──
+  // Native listeners with passive:false — React's synthetic touch events are passive,
+  // so preventDefault (needed to stop page scroll while drawing) only works this way.
+  useEffect(() => {
+    const layer = drawRef.current;
+    if (!layer || screen !== 'mark') return;
+
+    const pt = (cx, cy) => tapToCanvas(cx, cy, videoRef.current);
+
+    const onStart = (e) => {
+      const step = markStepRef.current;
+      if (step !== 0 && step !== 2) return;
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      if (step === 2) {
+        drawingRef.current = true;
+        rawRef.current = [pt(t.clientX, t.clientY)]; // new stroke replaces old
+        renderDrawPreview();
+      }
+    };
+    const onMove = (e) => {
+      if (markStepRef.current !== 2 || !drawingRef.current) return;
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      if (rawRef.current.length < 2500) rawRef.current.push(pt(t.clientX, t.clientY));
+      renderDrawPreview();
+    };
+    const onEnd = (e) => {
+      const step = markStepRef.current;
+      if (step === 0) {
+        e.preventDefault();
+        const t = e.changedTouches ? e.changedTouches[0] : e;
+        const p = pt(t.clientX, t.clientY);
+        startPtRef.current = p;
+        startTimeRef.current = videoRef.current.currentTime;
+        setHasStart(true);
+        redrawCurrent();
+      } else if (step === 2) {
+        e.preventDefault();
+        drawingRef.current = false;
+        setHasPath(rawRef.current.length > 4);
+      }
+    };
+
+    layer.addEventListener('touchstart', onStart, { passive:false });
+    layer.addEventListener('touchmove',  onMove,  { passive:false });
+    layer.addEventListener('touchend',   onEnd,   { passive:false });
+    // mouse fallback for desktop testing
+    let mouseDown = false;
+    const mDown = (e) => { mouseDown = true; onStart(e); };
+    const mMove = (e) => { if (mouseDown) onMove(e); };
+    const mUp   = (e) => { if (mouseDown) { mouseDown = false; onEnd(e); } };
+    layer.addEventListener('mousedown', mDown);
+    layer.addEventListener('mousemove', mMove);
+    layer.addEventListener('mouseup', mUp);
+    return () => {
+      layer.removeEventListener('touchstart', onStart);
+      layer.removeEventListener('touchmove', onMove);
+      layer.removeEventListener('touchend', onEnd);
+      layer.removeEventListener('mousedown', mDown);
+      layer.removeEventListener('mousemove', mMove);
+      layer.removeEventListener('mouseup', mUp);
+    };
+  }, [screen]);
+
+  // ── Step transitions ──
+  const goLandingStep = () => {
+    if (!startPtRef.current) { showToast('Tap the ball first', 'err'); return; }
+    setMarkStep(1);
+  };
+
+  const setLanding = () => {
+    const v = videoRef.current; if (!v) return;
+    if (v.currentTime <= startTimeRef.current + 0.15) {
+      showToast('Scrub forward to the landing moment first', 'err'); return;
+    }
+    endTimeRef.current = v.currentTime;
+    setMarkStep(2);
+    // Park the video mid-flight so the ball's path is visible while drawing
+    v.pause();
+    v.currentTime = (startTimeRef.current + endTimeRef.current) / 2;
+    setTimeout(redrawCurrent, 100);
+  };
+
+  const clearStroke = () => {
+    rawRef.current = []; setHasPath(false);
+    redrawCurrent();
+  };
+
+  const finishDraw = () => {
+    const v = videoRef.current;
+    const p = buildPath(rawRef.current, startPtRef.current, v.videoWidth);
+    if (!p) { showToast('Draw a longer stroke from the green dot', 'err'); return; }
+    pathRef.current = p;
+    v.pause();
+    v.currentTime = Math.max(0, startTimeRef.current - 0.8);
+    setScreen('results');
+    setTimeout(layoutOverlay, 80);
+  };
+
+  const backStep = () => {
+    if (markStep === 2) { rawRef.current = []; setHasPath(false); setMarkStep(1); }
+    else if (markStep === 1) setMarkStep(0);
+    setTimeout(redrawCurrent, 60);
+  };
+
+  const exitToUpload = () => {
+    const v = videoRef.current; if (v) v.pause();
+    setScreen('upload'); setVideoUrl(null); resetAll();
+  };
+
+  // ── Animation loop: draws tracer synced to video time while playing ──
   useEffect(() => {
     function loop() {
-      const v = videoRef.current, c = overlayRef.current, arc = arcRef.current;
+      const v = videoRef.current, c = overlayRef.current, path = pathRef.current;
       const s = settingsRef.current;
-      if (v && c && arc && arc.length >= 2) {
+      if (screenRef.current === 'results' && v && c && path && !v.paused) {
+        const t0 = startTimeRef.current;
+        const t1 = endTimeRef.current;
+        const dur = (t1 !== null && t1 > t0) ? (t1 - t0) : 3;
         const ctx = c.getContext('2d');
-        const t0 = impactTimeRef.current;
-        const t1 = landingTimeRef.current;
-        let prog;
-        if (t1 !== null && t1 > t0) {
-          // Real timing: progress = how far between impact and landing timestamps
-          prog = (v.currentTime - t0) / (t1 - t0);
-        } else {
-          // Fallback: fixed duration
-          prog = (v.currentTime - t0) / (s.flightSec || 3);
+        if (v.currentTime < t0) ctx.clearRect(0, 0, c.width, c.height);
+        else {
+          const prog = Math.min(1, (v.currentTime - t0) / dur);
+          drawBroadcastTracer(ctx, path, prog, s.color, s.lineWidth, s.style);
         }
-        prog = Math.max(0, Math.min(1, prog));
-        drawBroadcastTracer(ctx, arc, prog, s.color, s.lineWidth, s.style);
-      } else if (c && !arcRef.current) {
-        c.getContext('2d').clearRect(0, 0, c.width, c.height);
       }
       animRef.current = requestAnimationFrame(loop);
     }
     animRef.current = requestAnimationFrame(loop);
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    return () => cancelAnimationFrame(animRef.current);
   }, []);
 
-  // Redraw when settings change (static full-arc view)
+  // Redraw static path when style settings change
+  useEffect(() => { redrawCurrent(); }, [settings]);
+
+  // Entering results: show full arc preview, parked just before impact
   useEffect(() => {
-    if (!arcRef.current || !overlayRef.current) return;
-    const c = overlayRef.current, s = settings;
-    const ctx = c.getContext('2d');
-    drawBroadcastTracer(ctx, arcRef.current, 1, s.color, s.lineWidth, s.style);
-  }, [settings]);
-
-  // ── Handle tap on video to place markers ──
-  // Each tap records the current video timestamp — this is how tracer syncs to real ball flight
-  const tapTimesRef = useRef([]); // [impactTime, apexTime, landingTime]
-
-  const handleTap = (clientX, clientY) => {
+    if (screen !== 'results') return;
     const v = videoRef.current;
-    if (!v || !vidReady || markStep >= 3) return;
+    if (v) { v.pause(); v.currentTime = Math.max(0, startTimeRef.current - 0.8); }
+    setTimeout(() => { layoutOverlay(); }, 100);
+  }, [screen]);
 
-    const pt = tapToCanvas(clientX, clientY, v, overlayRef.current);
-    const rect = v.getBoundingClientRect();
-    const sx = clientX - rect.left, sy = clientY - rect.top;
-    const tapTime = v.currentTime; // record EXACTLY when in the video this tap happened
-
-    const labels = ['IMPACT','APEX','LANDING'];
-    const next = [...markers, { ...pt, sx, sy, label: labels[markStep], time: tapTime }];
-    setMarkers(next);
-    const nextStep = markStep + 1;
-    setMarkStep(nextStep);
-
-    // Store tap times
-    const times = [...tapTimesRef.current, tapTime];
-    tapTimesRef.current = times;
-
-    if (nextStep === 3) {
-      const [imp, apx, land] = next;
-
-      // Build the arc from the 3 canvas-space positions
-      const arc = makeArc(imp, apx, land, 80);
-      arcRef.current = arc;
-      setArcPoints(arc);
-
-      // Store real timing — tracer draws from impact timestamp to landing timestamp
-      impactTimeRef.current  = imp.time;
-      landingTimeRef.current = land.time;
-
-      // Draw full arc preview immediately
-      const c = overlayRef.current;
-      if (c) {
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        drawBroadcastTracer(c.getContext('2d'), arc, 1, settings.color, settings.lineWidth, settings.style);
-      }
-
-      // Rewind to just before impact so user can watch it play back
-      v.currentTime = Math.max(0, imp.time - 0.5);
-      setTimeout(() => setScreen('results'), 200);
-    }
-  };
-
-  // ── Auto-detect with Vision AI ──
-  const autoDetect = async () => {
-    const v = videoRef.current;
-    if (!v || !vidReady) { showToast('Video not ready yet', 'err'); return; }
-    setAnalyzing(true); setAnalyzePct(5); setAnalyzeMsg('Extracting key frames...');
-
-    try {
-      // Extract 3 strategic frames: early, mid, late in first 3s
-      const times = [0.3, 1.2, 2.4].map(t => Math.min(t, (v.duration || 4) * 0.9));
-      const canvas = document.createElement('canvas');
-      canvas.width  = Math.min(v.videoWidth, 480);
-      canvas.height = Math.round(canvas.width * v.videoHeight / v.videoWidth);
-      const ctx = canvas.getContext('2d');
-      const frames = [];
-      for (const t of times) {
-        await new Promise(res => {
-          v.currentTime = t;
-          v.onseeked = () => {
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-            frames.push({ t, data: canvas.toDataURL('image/jpeg', 0.75).split(',')[1] });
-            res();
-          };
-        });
-      }
-      setAnalyzePct(35); setAnalyzeMsg('Asking AI to find the ball...');
-
-      // Build prompt asking for ball in each of 3 frames
-      const content = [
-        { type:'text', text:
-          `You are analyzing a golf shot. The video frames are ${canvas.width}x${canvas.height} pixels.\n` +
-          `Frame 1 is early in the shot (ball just launched), Frame 2 is mid-flight (ball at or near apex), Frame 3 is late flight (ball descending).\n` +
-          `For each frame, find the golf ball — it is a small WHITE or LIGHT circle in the sky or grass area.\n` +
-          `Report pixel coordinates (x=left-to-right, y=top-to-bottom from top-left corner).\n` +
-          `Return ONLY JSON, no markdown:\n` +
-          `{"impact":{"x":120,"y":340},"apex":{"x":240,"y":80},"landing":{"x":420,"y":290},"flightSeconds":2.8,"shotType":"driver","ballFlightShape":"straight"}`
-        },
-        { type:'text', text:'Frame 1 (early flight, t='+frames[0].t.toFixed(2)+'s):' },
-        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:frames[0].data }},
-        { type:'text', text:'Frame 2 (apex/mid-flight, t='+frames[1].t.toFixed(2)+'s):' },
-        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:frames[1].data }},
-        { type:'text', text:'Frame 3 (late flight, t='+frames[2].t.toFixed(2)+'s):' },
-        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:frames[2].data }},
-      ];
-
-      setAnalyzePct(45); setAnalyzeMsg('Processing AI response...');
-      const r = await fetch('/api/trace', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ max_tokens:400, messages:[{ role:'user', content }]})
-      });
-      if (!r.ok) throw new Error('API error '+r.status);
-      const d = await r.json();
-      const raw = (d.content&&d.content[0]&&d.content[0].text) || '';
-      let parsed;
-      try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
-      catch { throw new Error('Could not parse AI response'); }
-
-      setAnalyzePct(75); setAnalyzeMsg('Building arc...');
-
-      // Scale from analysis resolution to native video resolution
-      const sx = v.videoWidth  / canvas.width;
-      const sy = v.videoHeight / canvas.height;
-      const imp  = { x: parsed.impact.x  * sx, y: parsed.impact.y  * sy };
-      const apx  = { x: parsed.apex.x    * sx, y: parsed.apex.y    * sy };
-      const land = { x: parsed.landing.x * sx, y: parsed.landing.y * sy };
-
-      const arc = makeArc(imp, apx, land, 80);
-      arcRef.current = arc;
-      setArcPoints(arc);
-      impactTimeRef.current = 0;
-      flightDurRef.current  = parsed.flightSeconds || settings.flightSec;
-      setSettings(s => ({...s, flightSec: parsed.flightSeconds || s.flightSec}));
-
-      const c = overlayRef.current;
-      if (c) {
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        drawBroadcastTracer(c.getContext('2d'), arc, 1, settings.color, settings.lineWidth, settings.style);
-      }
-      v.currentTime = 0;
-      setAnalyzePct(100); setAnalyzeMsg('Done!');
-      setTimeout(() => { setAnalyzing(false); setScreen('results'); }, 500);
-    } catch(err) {
-      console.error(err);
-      setAnalyzing(false);
-      showToast('AI detection failed — use manual tap instead', 'err');
-    }
-  };
-
-  // ── Reset markers ──
-  const resetMarkers = () => {
-    setMarkStep(0); setMarkers([]);
-    tapTimesRef.current = [];
-    arcRef.current = null; setArcPoints(null);
-    landingTimeRef.current = null;
+  const playTracer = () => {
+    const v = videoRef.current; if (!v) return;
     const c = overlayRef.current;
-    if (c) c.getContext('2d').clearRect(0,0,c.width,c.height);
+    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    v.currentTime = Math.max(0, startTimeRef.current - 0.8);
+    v.play().catch(()=>{});
   };
 
-  // ── Export ──
+  // ── Export: re-renders video + tracer to a canvas, records a tight clip ──
   const exportVideo = async () => {
-    const v = videoRef.current, arc = arcRef.current;
-    if (!v || !arc) return;
+    const v = videoRef.current, path = pathRef.current;
+    if (!v || !path) return;
     if (typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream) {
-      showToast('Export not supported — try screen recording', 'err'); return;
+      showToast('Export not supported here — screen-record instead', 'err'); return;
     }
     try {
       setExportPct(0);
       const W = v.videoWidth, H = v.videoHeight;
-      const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H;
+      const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
-      const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H;
+      const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H;
+      const tctx = tmp.getContext('2d');
 
-      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm;codecs=vp8';
+      // Prefer mp4 (plays natively on iOS), fall back to webm
+      const mimes = ['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'];
+      const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+      if (!mime) { showToast('No supported recorder format', 'err'); setExportPct(null); return; }
+      const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+      const t0 = startTimeRef.current;
+      const t1 = endTimeRef.current || (t0 + 3);
+      const clipStart = Math.max(0, t0 - 1.0);
+      const clipEnd   = Math.min(v.duration || (t1 + 2), t1 + 1.5);
+
       const stream = canvas.captureStream(30);
-      const rec = new MediaRecorder(stream, { mimeType:mime });
+      const rec = new MediaRecorder(stream, { mimeType: mime });
       const chunks = [];
-      rec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+      rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       rec.onstop = () => {
-        const blob = new Blob(chunks, { type:mime });
+        const blob = new Blob(chunks, { type: mime });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href=url; a.download='golf-tracer.webm'; a.click();
-        setExportPct(null); showToast('Video saved!');
+        a.href = url; a.download = 'golf-tracer.' + ext; a.click();
+        setExportPct(null);
+        showToast('Clip saved (' + ext.toUpperCase() + ', no audio)');
       };
+
+      v.pause();
+      v.currentTime = clipStart;
+      await new Promise(r => setTimeout(r, 250));
       rec.start(100);
-      v.currentTime = 0;
-      await new Promise(r => setTimeout(r,200));
       try { await v.play(); } catch(_){}
-      const dur = v.duration || 5;
-      const t0 = Date.now();
+
       const s = settingsRef.current;
+      let stopped = false;
       const render = () => {
-        const el = (Date.now()-t0)/1000;
-        setExportPct(Math.min(99, Math.round(el/dur*100)));
+        if (stopped) return;
+        const ct = v.currentTime;
+        setExportPct(Math.min(99, Math.round((ct - clipStart) / (clipEnd - clipStart) * 100)));
         ctx.drawImage(v, 0, 0, W, H);
-        const t0 = impactTimeRef.current;
-        const t1 = landingTimeRef.current;
-        const flightDur = (t1 !== null && t1 > t0) ? (t1 - t0) : (s.flightSec || 3);
-        const elapsed = Math.max(0, el - t0);
-        const prog = Math.min(1, elapsed / flightDur);
-        if (prog > 0) {
-          const tctx = tmp.getContext('2d');
-          tctx.clearRect(0,0,W,H);
-          drawBroadcastTracer(tctx, arc, prog, s.color, s.lineWidth, s.style);
+        if (ct >= t0) {
+          const dur = Math.max(0.3, t1 - t0);
+          const prog = Math.min(1, (ct - t0) / dur);
+          tctx.clearRect(0, 0, W, H);
+          drawBroadcastTracer(tctx, path, prog, s.color, s.lineWidth, s.style);
           ctx.drawImage(tmp, 0, 0);
         }
-        if (el < dur + 0.3) requestAnimationFrame(render);
-        else { v.pause(); v.currentTime=0; rec.stop(); }
+        if (ct >= clipEnd || v.ended) {
+          stopped = true;
+          v.pause();
+          rec.stop();
+        } else {
+          requestAnimationFrame(render);
+        }
       };
       requestAnimationFrame(render);
-    } catch(err) { console.error(err); showToast('Export failed', 'err'); setExportPct(null); }
+    } catch(err) {
+      console.error(err);
+      showToast('Export failed', 'err');
+      setExportPct(null);
+    }
   };
 
-  // ══════════════════════════════════
-  // RENDER
-  // ══════════════════════════════════
-  const STEP_LABELS = ['1. TAP IMPACT','2. TAP APEX','3. TAP LANDING'];
-  const STEP_DESCS  = [
-    'Pause video at impact. Tap where the ball is at the moment of club contact.',
-    'Play to the highest point of the arc. Tap the ball at its apex.',
-    'Play to where the ball lands. Tap the landing spot.'
+  // ══════════════════════════════════════════════════════
+  // RENDER — single persistent <video> so currentTime survives screen changes
+  // ══════════════════════════════════════════════════════
+  const STEP_TITLES = ['TAP THE BALL', 'FIND THE LANDING', 'DRAW THE FLIGHT'];
+  const STEP_SUBS = [
+    'Scrub to the impact frame, then tap the ball. Re-tap to adjust.',
+    'Scrub (or press ▶) to the moment the ball lands or disappears.',
+    'Drag your finger from the green dot along the flight. Draw again to redo.',
   ];
-  const DOT_COLORS  = ['#ff4444','#ffd700','#00e676'];
-
-  // Video block reused across mark + results screens
-  const videoBlock = videoUrl && h('div', { style:{margin:'0 20px', borderRadius:16, overflow:'hidden', background:'#000', position:'relative', border:'1px solid var(--border)'} },
-    // Tap-capture layer (only active during marking)
-    screen === 'mark' && markStep < 3 && h('div', {
-      style:{ position:'absolute', inset:0, zIndex:10, cursor:'crosshair' },
-      onClick: e => handleTap(e.clientX, e.clientY),
-      onTouchEnd: e => { e.preventDefault(); const t=e.changedTouches[0]; if(t) handleTap(t.clientX, t.clientY); }
-    }),
-    // Instruction banner
-    screen === 'mark' && markStep < 3 && h('div', { className:'instruct', style:{zIndex:11} },
-      h('div', { className:'instruct-dot', style:{background: DOT_COLORS[markStep]} }),
-      h('div', null,
-        h('div', { className:'instruct-text' }, STEP_LABELS[markStep]),
-        h('div', { className:'instruct-sub' }, STEP_DESCS[markStep])
-      )
-    ),
-    // Placed marker dots (screen-space positioned)
-    ...markers.map((m, i) =>
-      h('div', { key:i, className:'marker', style:{ left:m.sx, top:m.sy } },
-        h('svg', { width:28, height:28, viewBox:'0 0 28 28' },
-          h('circle', { cx:14, cy:14, r:10, fill:'none', stroke:DOT_COLORS[i], strokeWidth:2.5 }),
-          h('circle', { cx:14, cy:14, r:3.5, fill:DOT_COLORS[i] })
-        )
-      )
-    ),
-    // Video element
-    h('video', {
-      ref: videoRef,
-      src: videoUrl,
-      controls: true,
-      playsInline: true,
-      muted: true,
-      preload: 'auto',
-      'webkit-playsinline': 'true',
-      style: { width:'100%', display:'block' },
-      onLoadedMetadata: onVidReady,
-      onLoadedData: onVidReady,
-      onCanPlay: onVidReady,
-    }),
-    // Tracer overlay canvas
-    h('canvas', {
-      ref: overlayRef,
-      style: { position:'absolute', top:0, left:0, width:'100%', height:'100%', pointerEvents:'none' }
-    })
-  );
+  const inMark = screen === 'mark';
+  const inResults = screen === 'results';
 
   return h('div', null,
-    // HEADER
-    h('div', { className:'header' },
-      h('div', { className:'logo' }, 'TRACER', h('span', null, '.AI')),
-      h('div', { className:'badge' },
-        screen==='upload' ? 'READY' :
-        screen==='mark'   ? (markStep<3 ? `STEP ${markStep+1} OF 3` : 'BUILDING...') :
-        analyzing         ? 'ANALYZING' : 'COMPLETE'
+
+    !inMark && h('div', { className:'header' },
+      h('div', { className:'logo' }, 'TRACER', h('span', null, '.')),
+      h('div', { className:'badge' }, screen === 'upload' ? 'READY' : 'COMPLETE')
+    ),
+
+    // ── PERSISTENT VIDEO LAYER ──
+    videoUrl && h('div', {
+      key:'persistent-vid',
+      style: inMark
+        ? { position:'fixed', inset:0, zIndex:200, background:'#000', display:'flex', flexDirection:'column' }
+        : inResults
+        ? { margin:'74px 20px 0', borderRadius:16, overflow:'hidden', background:'#000', position:'relative', border:'1px solid #222' }
+        : { display:'none' }
+    },
+      h('div', { style:{ position:'relative', flex: inMark ? 1 : undefined, overflow:'hidden' } },
+
+        // VIDEO
+        h('video', {
+          ref:videoRef, src:videoUrl, playsInline:true, muted:true, preload:'auto',
+          controls: inResults,
+          'webkit-playsinline':'true',
+          style: inMark
+            ? { width:'100%', height:'100%', objectFit:'contain', display:'block' }
+            : { width:'100%', display:'block' },
+          onLoadedMetadata:onVidReady, onLoadedData:onVidReady, onCanPlay:onVidReady,
+        }),
+
+        // OVERLAY CANVAS — positioned by layoutOverlay() to match video content exactly
+        h('canvas', {
+          ref:overlayRef,
+          style:{ position:'absolute', top:0, left:0, pointerEvents:'none', zIndex:5 }
+        }),
+
+        // TOUCH LAYER (mark mode, steps 0 and 2)
+        inMark && (markStep === 0 || markStep === 2) && h('div', {
+          ref:drawRef,
+          style:{ position:'absolute', inset:0, zIndex:8, cursor:'crosshair', touchAction:'none' }
+        }),
+
+        // Top instruction
+        inMark && h('div', { className:'fs-topbar' },
+          h('div', { className:'fs-step-badge' }, 'STEP ' + (markStep + 1) + ' OF 3'),
+          h('div', { style:{ flex:1 } },
+            h('div', { className:'fs-instruct-title' }, STEP_TITLES[markStep]),
+            h('div', { className:'fs-instruct-sub' }, STEP_SUBS[markStep])
+          )
+        ),
+        inMark && h('div', { className:'fs-stepdots' },
+          [0,1,2].map(i => h('div', { key:i, className:'fs-dot' + (markStep > i ? ' done' : markStep === i ? ' active' : '') }))
+        ),
+
+        // PLAY TRACER (results)
+        inResults && h('div', { style:{ position:'absolute', bottom:52, left:'50%', transform:'translateX(-50%)', zIndex:10 } },
+          h('div', {
+            style:{
+              background:'rgba(0,0,0,0.85)', border:'2px solid #00e676', borderRadius:30,
+              color:'#00e676', fontFamily:'Bebas Neue', fontSize:17, letterSpacing:3,
+              padding:'10px 22px', cursor:'pointer', backdropFilter:'blur(10px)',
+              display:'flex', alignItems:'center', gap:8, whiteSpace:'nowrap',
+            },
+            onClick:playTracer,
+            onTouchEnd:e => { e.preventDefault(); playTracer(); }
+          },
+            h('span', { style:{ fontSize:18 } }, isPlaying ? '◼' : '▶'),
+            isPlaying ? 'PLAYING…' : 'PLAY TRACER'
+          )
+        )
+      ),
+
+      // MARK bottom HUD
+      inMark && h('div', { className:'fs-bottom' },
+        h('div', { className:'fs-scrubber-row' },
+          h('div', { className:'fs-frame-btn', onClick:()=>stepFrame(-1), onTouchEnd:e=>{e.preventDefault();stepFrame(-1);} }, '‹'),
+          h('div', { className:'fs-frame-btn', onClick:togglePlay, onTouchEnd:e=>{e.preventDefault();togglePlay();} }, isPlaying ? '❚❚' : '▶'),
+          h('input', { className:'fs-scrub', type:'range', min:0, max:totalFrames || 100, step:1, value:currentFrame,
+            onChange:e=>seekToFrame(parseInt(e.target.value)),
+            onInput: e=>seekToFrame(parseInt(e.target.value)),
+          }),
+          h('div', { className:'fs-frame-btn', onClick:()=>stepFrame(1), onTouchEnd:e=>{e.preventDefault();stepFrame(1);} }, '›'),
+        ),
+        h('div', { className:'fs-info-row' },
+          h('div', { className:'fs-frame-count' }, 'F' + currentFrame + ' / ' + totalFrames),
+          h('div', { className:'fs-time-str' }, (currentFrame / fps).toFixed(3) + 's')
+        ),
+        markStep === 0 && h('div', { className:'fs-fps-row' },
+          [24,30,60,120,240].map(f =>
+            h('div', { key:f, className:'fs-fps-btn' + (fps === f ? ' on' : ''),
+              onClick:()=>{ setFps(f); setTotalFrames(Math.round((videoRef.current?.duration || 0) * f)); },
+              onTouchEnd:e=>{ e.preventDefault(); setFps(f); setTotalFrames(Math.round((videoRef.current?.duration || 0) * f)); }
+            }, f + 'fps')
+          )
+        ),
+        h('div', { className:'fs-action-row' },
+          markStep > 0 && h('div', { className:'fs-action-btn fs-btn-dim', onClick:backStep, onTouchEnd:e=>{e.preventDefault();backStep();} }, '← BACK'),
+
+          markStep === 0 && h('div', {
+            className:'fs-action-btn fs-btn-green' + (hasStart ? '' : ' fs-btn-disabled'),
+            onClick:goLandingStep, onTouchEnd:e=>{e.preventDefault();goLandingStep();}
+          }, 'NEXT →'),
+
+          markStep === 1 && h('div', {
+            className:'fs-action-btn fs-btn-green',
+            onClick:setLanding, onTouchEnd:e=>{e.preventDefault();setLanding();}
+          }, 'SET LANDING ✓'),
+
+          markStep === 2 && h('div', {
+            className:'fs-action-btn fs-btn-dim' + (hasPath ? '' : ' fs-btn-disabled'),
+            onClick:clearStroke, onTouchEnd:e=>{e.preventDefault();clearStroke();}
+          }, 'CLEAR'),
+          markStep === 2 && h('div', {
+            className:'fs-action-btn fs-btn-green' + (hasPath ? '' : ' fs-btn-disabled'),
+            onClick:finishDraw, onTouchEnd:e=>{e.preventDefault();finishDraw();}
+          }, 'DONE ✓'),
+
+          h('div', { className:'fs-action-btn fs-btn-back', onClick:exitToUpload, onTouchEnd:e=>{e.preventDefault();exitToUpload();} }, '✕')
+        )
       )
     ),
 
     // ── UPLOAD SCREEN ──
     screen === 'upload' && h('div', { className:'screen' },
-      h('div', { style:{padding:'24px 20px 10px'} },
-        h('div', { style:{fontFamily:'Bebas Neue',fontSize:34,letterSpacing:4,lineHeight:1.05} },
-          'GOLF SHOT', h('br'), h('span', {style:{color:'var(--green)'}}, 'TRACER')
+      h('div', { style:{ padding:'24px 20px 10px' } },
+        h('div', { style:{ fontFamily:'Bebas Neue', fontSize:34, letterSpacing:4, lineHeight:1.05 } },
+          'GOLF SHOT', h('br'), h('span', { style:{ color:'var(--green)' } }, 'TRACER')
         ),
-        h('p', { style:{fontSize:13,color:'var(--muted)',marginTop:8,lineHeight:1.6} },
-          'Add a TV-quality shot tracer to your golf videos. Tap 3 points, get a broadcast arc.'
-        )
+        h('p', { style:{ fontSize:13, color:'var(--muted)', marginTop:8, lineHeight:1.6 } },
+          'Tap the ball, draw the flight with your finger, get a broadcast tracer.')
       ),
       h('div', {
-        className: 'drop-zone' + (isDrag ? ' over' : ''),
-        onDragOver: e => { e.preventDefault(); setIsDrag(true); },
-        onDragLeave: () => setIsDrag(false),
-        onDrop: e => { e.preventDefault(); setIsDrag(false); loadFile(e.dataTransfer.files[0]); }
+        className:'drop-zone' + (isDrag ? ' over' : ''),
+        onDragOver:e=>{ e.preventDefault(); setIsDrag(true); },
+        onDragLeave:()=>setIsDrag(false),
+        onDrop:e=>{ e.preventDefault(); setIsDrag(false); loadFile(e.dataTransfer.files[0]); }
       },
         h('div', { className:'drop-icon' },
           h('svg', { viewBox:'0 0 24 24' },
@@ -891,216 +969,86 @@ function App() {
           )
         ),
         h('div', { className:'drop-title' }, 'UPLOAD SWING VIDEO'),
-        h('div', { className:'drop-sub' }, 'Any video from camera roll', h('br'), '60fps · Side-on angle works best'),
-        h('button', { className:'choose-btn', onClick: () => fileRef.current && fileRef.current.click() }, 'CHOOSE VIDEO'),
-        h('input', { ref:fileRef, type:'file', accept:'video/*', style:{display:'none'}, onChange: e => loadFile(e.target.files[0]) })
+        h('div', { className:'drop-sub' }, 'Any video from camera roll', h('br'), 'Steady camera works best'),
+        h('button', { className:'choose-btn', onClick:()=>fileRef.current && fileRef.current.click() }, 'CHOOSE VIDEO'),
+        h('input', { ref:fileRef, type:'file', accept:'video/*', style:{ display:'none' }, onChange:e=>loadFile(e.target.files[0]) })
       ),
       h('div', { className:'tips-grid' },
         [
-          { ic:'📷', t:'Fixed Camera', d:'Tripod or steady hand. Panning ruins tracking.' },
-          { ic:'⚡', t:'60fps', d:'Use iPhone slo-mo for the cleanest arc.' },
-          { ic:'☀️', t:'Side-On Angle', d:'Film perpendicular to ball flight like on TV.' },
-          { ic:'🎯', t:'3 Taps', d:'You mark impact, apex, and landing — done.' },
-        ].map(({ic,t,d}) => h('div', {key:t, className:'tip'},
-          h('div', {className:'tip-ic'}, ic),
-          h('div', {className:'tip-t'}, t),
-          h('div', {className:'tip-d'}, d)
+          { ic:'📷', t:'Steady Camera', d:'Tripod or braced hand.' },
+          { ic:'🎯', t:'One Tap', d:'Mark the ball at impact.' },
+          { ic:'✍️', t:'Finger Draw', d:'Trace the flight you saw.' },
+          { ic:'🎬', t:'Auto Overlay', d:'Tracer syncs to the real flight time.' },
+        ].map(({ic,t,d}) => h('div', { key:t, className:'tip' },
+          h('div', { className:'tip-ic' }, ic), h('div', { className:'tip-t' }, t), h('div', { className:'tip-d' }, d)
         ))
       )
     ),
 
-    // ── MARK SCREEN ──
-    // ── MARK SCREEN (fullscreen) ──
-    screen === 'mark' && h('div', { className:'fs-mark-screen' },
-
-      h('div', { className:'fs-video-wrap' },
-        // Tap capture layer
-        markStep < 3 && h('div', {
-          className:'fs-tap-layer',
-          onClick: e => handleTap(e.clientX, e.clientY),
-          onTouchEnd: e => { e.preventDefault(); const t=e.changedTouches[0]; if(t) handleTap(t.clientX,t.clientY); }
-        }),
-
-        // Top instruction bar
-        h('div', { className:'fs-topbar' },
-          h('div', { className:'fs-step-badge' }, markStep < 3 ? `STEP ${markStep+1} OF 3` : 'BUILDING...'),
-          markStep < 3 && h('div', { className:'fs-instruct-text' },
-            h('div', { className:'fs-instruct-title' },
-              ['TAP THE BALL AT IMPACT','TAP THE BALL AT ITS HIGHEST POINT','TAP WHERE THE BALL LANDS'][markStep]
-            ),
-            h('div', { className:'fs-instruct-sub' },
-              ['Scrub to exact impact frame first','Scrub to apex of the arc','Scrub to landing spot'][markStep]
-            )
-          )
-        ),
-
-        // Step dots
-        h('div', { className:'fs-stepdots' },
-          [0,1,2].map(i => h('div', { key:i,
-            className:'fs-dot'+(markStep>i?' done':markStep===i?' active':'')
-          }))
-        ),
-
-        // Placed marker rings (absolute, positioned from video top-left)
-        ...markers.map((m, i) =>
-          h('div', { key:i, className:'fs-marker', style:{ left:m.sx, top:m.sy } },
-            h('svg', { width:32, height:32, viewBox:'0 0 32 32' },
-              h('circle', { cx:16, cy:16, r:12, fill:'none',
-                stroke:['#ff4444','#ffd700','#00e676'][i], strokeWidth:2.5,
-                strokeDasharray:'3 2'
-              }),
-              h('circle', { cx:16, cy:16, r:4, fill:['#ff4444','#ffd700','#00e676'][i] }),
-            ),
-            h('div', {
-              style:{
-                position:'absolute', left:18, top:-6, fontSize:10, fontWeight:700,
-                letterSpacing:1, color:['#ff4444','#ffd700','#00e676'][i],
-                background:'rgba(0,0,0,0.7)', padding:'2px 5px', borderRadius:4,
-                whiteSpace:'nowrap'
-              }
-            }, ['IMPACT','APEX','LAND'][i])
-          )
-        ),
-
-        // Video
-        h('video', {
-          ref: videoRef, src: videoUrl, controls: true, playsInline: true,
-          muted: true, preload:'auto', 'webkit-playsinline':'true',
-          style:{ width:'100%', height:'100%', objectFit:'contain', display:'block' },
-          onLoadedMetadata: onVidReady, onLoadedData: onVidReady, onCanPlay: onVidReady,
-        }),
-
-        // Tracer canvas overlay
-        h('canvas', {
-          ref: overlayRef,
-          className:'fs-canvas'
-        }),
-
-        // Bottom HUD
-        h('div', { className:'fs-bottom' },
-          // Scrubber row
-          h('div', { className:'fs-scrubber-row' },
-            h('div', { className:'fs-frame-btn',
-              onClick:()=>stepFrame(-1),
-              onTouchEnd:e=>{e.preventDefault();stepFrame(-1);}
-            }, '‹'),
-            h('input', {
-              className:'fs-scrub', type:'range',
-              min:0, max:totalFrames||100, step:1,
-              value:currentFrame,
-              onChange:e=>seekToFrame(parseInt(e.target.value)),
-              onInput:e=>seekToFrame(parseInt(e.target.value)),
-            }),
-            h('div', { className:'fs-frame-btn',
-              onClick:()=>stepFrame(1),
-              onTouchEnd:e=>{e.preventDefault();stepFrame(1);}
-            }, '›'),
-          ),
-          h('div', { className:'fs-info-row' },
-            h('div', { className:'fs-frame-count' }, 'F'+currentFrame+' / '+totalFrames),
-            h('div', { className:'fs-time-str' }, (currentFrame/fps).toFixed(3)+'s')
-          ),
-          h('div', { className:'fs-fps-row' },
-            [24,30,60,120,240].map(f =>
-              h('div', { key:f, className:'fs-fps-btn'+(fps===f?' on':''),
-                onClick:()=>{ setFps(f); setTotalFrames(Math.round((videoRef.current?.duration||0)*f)); }
-              }, f+'fps')
-            )
-          ),
-          h('div', { className:'fs-action-row' },
-            markStep > 0 && h('div', { className:'fs-action-btn fs-btn-redo', onClick:resetMarkers,
-              onTouchEnd:e=>{e.preventDefault();resetMarkers();} }, '↩ REDO'),
-            h('div', { className:'fs-action-btn fs-btn-ai',
-              onClick:autoDetect,
-              onTouchEnd:e=>{e.preventDefault();autoDetect();},
-              style:{opacity:(!vidReady||analyzing)?0.4:1, pointerEvents:(!vidReady||analyzing)?'none':'auto'}
-            }, analyzing?'DETECTING...':'✨ AI AUTO'),
-            h('div', { className:'fs-action-btn fs-btn-back',
-              onClick:()=>{setScreen('upload');setVideoUrl(null);setVideoFile(null);resetMarkers();},
-              onTouchEnd:e=>{e.preventDefault();setScreen('upload');setVideoUrl(null);setVideoFile(null);resetMarkers();}
-            }, '✕ EXIT')
-          )
-        )
-      )
-    ),
-
     // ── RESULTS SCREEN ──
-    screen === 'results' && h('div', { className:'screen' },
-      h('div', { style:{padding:'14px 20px 8px', display:'flex', alignItems:'center', justifyContent:'space-between'} },
-        h('div', { style:{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,color:'var(--green)'} }, 'TRACER PREVIEW'),
-        h('div', { className:'badge' }, 'LIVE')
-      ),
-      videoBlock,
-
-      // Style controls
+    inResults && h('div', { style:{ paddingBottom:40, paddingTop:8 } },
       h('div', { className:'style-panel' },
-        h('div', { className:'sp-header' }, '⚙️ TRACER STYLE'),
+        h('div', { className:'sp-header' }, 'TRACER STYLE'),
         h('div', { className:'sp-row' },
-          h('div', null, h('div', {className:'sp-label'}, 'Color')),
+          h('div', null, h('div', { className:'sp-label' }, 'Color')),
           h('div', { className:'swatches' },
-            COLORS.map(c => h('div', { key:c, className:'sw'+(settings.color===c?' on':''), style:{background:c}, onClick:()=>setSettings(s=>({...s,color:c})) }))
+            COLORS.map(c => h('div', { key:c, className:'sw' + (settings.color === c ? ' on' : ''), style:{ background:c },
+              onClick:()=>setSettings(s=>({...s, color:c})),
+              onTouchEnd:e=>{ e.preventDefault(); setSettings(s=>({...s, color:c})); }
+            }))
           )
         ),
         h('div', { className:'sp-row' },
-          h('div', null, h('div', {className:'sp-label'}, 'Style')),
-          h('select', { value:settings.style, onChange:e=>setSettings(s=>({...s,style:e.target.value})) },
-            STYLES.map(st => h('option',{key:st},st))
-          )
+          h('div', null, h('div', { className:'sp-label' }, 'Style')),
+          h('select', { value:settings.style, onChange:e=>setSettings(s=>({...s, style:e.target.value})) },
+            STYLES.map(st => h('option', { key:st }, st)))
         ),
         h('div', { className:'sp-row' },
-          h('div', null, h('div',{className:'sp-label'},'Width'), h('div',{className:'sp-sub'},settings.lineWidth.toFixed(1)+'px')),
-          h('input', { type:'range', min:1.5, max:7, step:0.5, value:settings.lineWidth, onChange:e=>setSettings(s=>({...s,lineWidth:parseFloat(e.target.value)})) })
-        ),
-        h('div', { className:'sp-row' },
-          h('div', null, h('div',{className:'sp-label'},'Flight Time'), h('div',{className:'sp-sub'},settings.flightSec+'s')),
-          h('input', { type:'range', min:1, max:7, step:0.5, value:settings.flightSec, onChange:e=>{ const v=parseFloat(e.target.value); flightDurRef.current=v; setSettings(s=>({...s,flightSec:v})); } })
+          h('div', null, h('div', { className:'sp-label' }, 'Width'), h('div', { className:'sp-sub' }, settings.lineWidth.toFixed(1) + 'px')),
+          h('input', { className:'sp-range', type:'range', min:1.5, max:7, step:0.5, value:settings.lineWidth,
+            onChange:e=>setSettings(s=>({...s, lineWidth:parseFloat(e.target.value)})) })
         )
       ),
-
-      // Export
       h('div', { className:'section-title' }, 'EXPORT'),
       h('div', { className:'export-card' },
         h('div', { className:'ex-row' },
-          h('div', { className:'ex-ic', style:{background:'rgba(0,230,118,0.1)'} }, '🎬'),
+          h('div', { className:'ex-ic', style:{ background:'rgba(0,230,118,0.1)' } }, '🎬'),
           h('div', { className:'ex-info' },
-            h('div', { className:'ex-name' }, 'Save Video with Tracer'),
-            h('div', { className:'ex-desc' }, 'Tracer burned into video')
+            h('div', { className:'ex-name' }, 'Save clip with tracer'),
+            h('div', { className:'ex-desc' }, 'Trimmed around the shot · no audio')
           ),
-          h('button', { className:'ex-btn ex-green', onClick:exportVideo, disabled:exportPct!==null },
-            exportPct !== null ? exportPct+'%' : 'SAVE'
-          )
+          h('button', { className:'ex-btn ex-green', onClick:exportVideo, disabled:exportPct !== null },
+            exportPct !== null ? exportPct + '%' : 'SAVE')
         ),
         h('div', { className:'ex-row' },
-          h('div', { className:'ex-ic', style:{background:'rgba(255,255,255,0.05)'} }, '✏️'),
+          h('div', { className:'ex-ic', style:{ background:'rgba(255,255,255,0.05)' } }, '✍️'),
           h('div', { className:'ex-info' },
-            h('div', { className:'ex-name' }, 'Re-mark Shot'),
-            h('div', { className:'ex-desc' }, 'Tap 3 new points')
+            h('div', { className:'ex-name' }, 'Redraw flight'),
+            h('div', { className:'ex-desc' }, 'Keep the start point, draw a new shape')
           ),
-          h('button', { className:'ex-btn ex-outline', onClick:()=>{ resetMarkers(); setScreen('mark'); } }, 'REDO')
+          h('button', { className:'ex-btn ex-outline', onClick:()=>{
+            rawRef.current = []; pathRef.current = null; setHasPath(false);
+            setMarkStep(2); setScreen('mark');
+            const v = videoRef.current;
+            if (v && endTimeRef.current) { v.pause(); v.currentTime = (startTimeRef.current + endTimeRef.current) / 2; }
+          } }, 'REDRAW')
+        ),
+        h('div', { className:'ex-row' },
+          h('div', { className:'ex-ic', style:{ background:'rgba(255,255,255,0.05)' } }, '↩'),
+          h('div', { className:'ex-info' },
+            h('div', { className:'ex-name' }, 'Start over'),
+            h('div', { className:'ex-desc' }, 'New ball position and timing')
+          ),
+          h('button', { className:'ex-btn ex-outline', onClick:()=>{ resetAll(); setScreen('mark'); } }, 'RESET')
         )
       ),
-      h('div', { style:{height:16} }),
+      h('div', { style:{ height:16 } }),
       h('div', { className:'controls' },
-        h('button', { className:'btn btn-dark', onClick:()=>{ setScreen('upload'); setVideoUrl(null); setVideoFile(null); resetMarkers(); } }, '← NEW VIDEO')
+        h('button', { className:'btn btn-dark', onClick:exitToUpload }, '← NEW VIDEO')
       )
     ),
 
-    // ── ANALYZING OVERLAY ──
-    analyzing && h('div', { className:'analyze-screen' },
-      h('div', { className:'analyze-ring' },
-        h('svg', { width:130, height:130 },
-          h('circle', { cx:65, cy:65, r:R, fill:'none', stroke:'var(--border)', strokeWidth:6 }),
-          h('circle', { cx:65, cy:65, r:R, fill:'none', stroke:'var(--green)', strokeWidth:6, strokeLinecap:'round',
-            strokeDasharray:CIRC, strokeDashoffset: CIRC*(1-analyzePct/100), style:{transition:'stroke-dashoffset 0.3s ease'} })
-        ),
-        h('div', { className:'analyze-pct' }, analyzePct+'%')
-      ),
-      h('div', { className:'analyze-title' }, 'ANALYZING'),
-      h('div', { className:'analyze-msg' }, analyzeMsg)
-    ),
-
-    // ── TOAST ──
-    toast && h('div', { className:'toast ' + toast.type }, (toast.type==='ok'?'✓ ':'✕ ') + toast.msg)
+    toast && h('div', { className:'toast ' + toast.type }, (toast.type === 'ok' ? '✓ ' : '✕ ') + toast.msg)
   );
 }
 
